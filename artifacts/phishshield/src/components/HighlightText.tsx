@@ -7,9 +7,34 @@ interface HighlightTextProps {
   spans: SuspiciousSpan[];
 }
 
+// Helper to parse URLs in text
+function TextWithUrls({ text }: { text: string }) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.match(urlRegex)) {
+          return (
+            <span key={i} className="text-blue-400/80 underline cursor-default italic">
+              {part}
+            </span>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 export function HighlightText({ text, spans }: HighlightTextProps) {
   if (!spans || spans.length === 0) {
-    return <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">{text}</p>;
+    return (
+      <div className="whitespace-pre-wrap text-foreground/70 leading-relaxed font-mono text-sm">
+        <TextWithUrls text={text} />
+      </div>
+    );
   }
 
   // Sort spans by start index
@@ -21,8 +46,8 @@ export function HighlightText({ text, spans }: HighlightTextProps) {
     // Add text before the span
     if (span.start > lastIndex) {
       elements.push(
-        <span key={`text-${i}`} className="text-muted-foreground leading-relaxed">
-          {text.slice(lastIndex, span.start)}
+        <span key={`text-${i}`} className="text-foreground/70 leading-relaxed">
+          <TextWithUrls text={text.slice(lastIndex, span.start)} />
         </span>
       );
     }
@@ -34,11 +59,11 @@ export function HighlightText({ text, spans }: HighlightTextProps) {
         <TooltipProvider key={`span-${i}`}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <mark className="bg-destructive/20 text-destructive-foreground font-medium px-1 rounded-sm border-b border-destructive/50 cursor-help transition-colors hover:bg-destructive/30 inline-block">
+              <span className="underline underline-offset-2 decoration-warning/60 decoration-wavy text-warning/90 cursor-help transition-colors hover:text-warning inline-block">
                 {spanText}
-              </mark>
+              </span>
             </TooltipTrigger>
-            <TooltipContent className="bg-destructive text-destructive-foreground border-none font-medium max-w-[250px]">
+            <TooltipContent className="bg-popover border border-popover-border text-foreground shadow-sm font-medium max-w-[250px]">
               <p>{span.reason}</p>
             </TooltipContent>
           </Tooltip>
@@ -51,11 +76,11 @@ export function HighlightText({ text, spans }: HighlightTextProps) {
   // Add remaining text
   if (lastIndex < text.length) {
     elements.push(
-      <span key="text-last" className="text-muted-foreground leading-relaxed">
-        {text.slice(lastIndex)}
+      <span key="text-last" className="text-foreground/70 leading-relaxed">
+        <TextWithUrls text={text.slice(lastIndex)} />
       </span>
     );
   }
 
-  return <div className="whitespace-pre-wrap">{elements}</div>;
+  return <div className="whitespace-pre-wrap font-mono text-sm">{elements}</div>;
 }

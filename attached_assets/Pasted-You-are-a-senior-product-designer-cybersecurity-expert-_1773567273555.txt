@@ -1,0 +1,146 @@
+You are a senior product designer, cybersecurity expert, and full-stack engineer.
+
+Upgrade and refine the project "PhishShield AI" into a highly polished, natural, human-designed cybersecurity product.
+
+GOAL:
+The application must NOT look AI-generated. It should feel like a real startup-grade product built by experienced engineers and designers.
+
+---
+
+1. OVERALL FEEL:
+- Make the UI clean, minimal, and intentional
+- Avoid generic or repetitive layouts
+- Ensure everything feels thoughtfully placed (spacing, alignment, hierarchy)
+- The product should feel calm, professional, and trustworthy
+
+---
+
+2. BRANDING:
+- Product name: "PhishShield AI"
+- Tagline: "Detect. Explain. Protect."
+- Add a subtle shield-style icon or logo
+- Add a small line: "Built for Indian users 🇮🇳"
+- Keep branding minimal but strong
+
+---
+
+3. COLOR SYSTEM:
+- Primary: Dark blue (trust, cybersecurity)
+- Secondary:
+  - Green (safe)
+  - Yellow (warning)
+  - Red (phishing/danger)
+- Background: soft light or dark neutral tone
+- Avoid overly bright or flashy colors
+
+---
+
+4. LAYOUT STRUCTURE:
+- Centered layout with proper margins
+- Sections:
+  1. Header (branding)
+  2. Input section
+  3. Result section
+- Use card-based design with soft shadows and rounded corners
+- Maintain clear visual hierarchy
+
+---
+
+5. INPUT SECTION:
+- Large clean textarea with placeholder:
+  "Paste suspicious email content here..."
+- Add a well-designed “Scan Email” button
+- Add subtle hover and click animations
+- Keep it simple and distraction-free
+
+---
+
+6. LOADING EXPERIENCE:
+- Add a short “Scanning…” state (0.5–1 sec)
+- Use smooth transition before showing results
+- Avoid instant jump — make it feel alive
+
+---
+
+7. RESULT SECTION (VERY IMPORTANT):
+- Display result inside a premium card
+- Show:
+  - Large label (Safe / Suspicious / Phishing)
+  - Risk score (prominent)
+  - Confidence percentage
+- Use color-coded borders or accents (not full harsh backgrounds)
+
+---
+
+8. EXPLANATION (HUMAN LANGUAGE):
+Replace robotic text with natural explanations.
+
+Examples:
+- Instead of: "Suspicious patterns detected"
+- Use: "This email is trying to create urgency to pressure you"
+
+- Instead of: "URL anomaly"
+- Use: "The link looks similar to a trusted site but may be fake"
+
+Make all explanations:
+- simple
+- human
+- easy to understand
+
+---
+
+9. SUSPICIOUS CONTENT HIGHLIGHTING:
+- Highlight risky words in red inside the email
+- Keep it subtle and readable (not too aggressive)
+- Make it visually helpful, not overwhelming
+
+---
+
+10. LINK ANALYSIS SECTION:
+- Show detected links in a separate clean section
+- Display:
+  - status (safe/suspicious)
+  - reason (lookalike domain, keyword-based risk)
+
+---
+
+11. MICRO-INTERACTIONS:
+- Button hover effects
+- Smooth fade-in for results
+- Slight transitions between states
+- Everything should feel smooth and responsive
+
+---
+
+12. HUMAN TOUCH:
+- Avoid perfect robotic sentences
+- Use slightly natural phrasing
+- Add small practical lines like:
+  - "Take a moment before clicking any link"
+  - "Scammers often create urgency to trick users"
+
+---
+
+13. REAL-WORLD TRUST SIGNALS:
+- Add tips:
+  - "Banks never ask for OTP via email"
+  - "Verify sender before taking action"
+- Mention Indian context (SBI, UPI scams)
+
+---
+
+14. REMOVE AI-GENERATED FEEL:
+- Avoid repetitive UI blocks
+- Avoid overuse of bullet lists
+- Ensure spacing and typography feel custom
+- Keep design subtle and mature
+
+---
+
+15. FINAL EXPECTATION:
+The result should feel like:
+- a real cybersecurity startup product
+- built for real users
+- demo-ready for a national-level hackathon
+
+Focus on clarity, trust, usability, and real-world feel.

@@ -21,20 +21,20 @@ export function ScoreGauge({ score, classification }: ScoreGaugeProps) {
 
   // Colors based on classification
   const colors = {
-    safe: { stroke: 'stroke-safe', text: 'text-safe text-glow-safe', glow: 'drop-shadow-[0_0_12px_rgba(16,185,129,0.6)]' },
-    suspicious: { stroke: 'stroke-warning', text: 'text-warning text-glow-warning', glow: 'drop-shadow-[0_0_12px_rgba(245,158,11,0.6)]' },
-    phishing: { stroke: 'stroke-destructive', text: 'text-destructive text-glow-destructive', glow: 'drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]' }
+    safe: { stroke: 'stroke-safe', text: 'text-safe' },
+    suspicious: { stroke: 'stroke-warning', text: 'text-warning' },
+    phishing: { stroke: 'stroke-destructive', text: 'text-destructive' }
   };
 
-  const { stroke, text, glow } = colors[classification] || colors.safe;
+  const { stroke, text } = colors[classification] || colors.safe;
 
   return (
-    <div className="relative flex flex-col items-center justify-center pt-6">
+    <div className="relative flex flex-col items-center justify-center pt-2">
       <svg 
         width="200" 
-        height="120" 
+        height="100" 
         viewBox="0 0 160 90" 
-        className={cn("overflow-visible", glow)}
+        className="overflow-visible relative z-10"
       >
         {/* Background Track */}
         <circle
@@ -43,13 +43,31 @@ export function ScoreGauge({ score, classification }: ScoreGaugeProps) {
           r={radius}
           fill="none"
           stroke="currentColor"
-          strokeWidth="12"
-          className="stroke-muted/30"
+          strokeWidth="8"
+          className="stroke-muted"
           strokeDasharray={strokeDasharray}
           strokeDashoffset="0"
           transform="rotate(180 80 80)"
           strokeLinecap="round"
         />
+        
+        {/* Subtle CSS glow via duplicated blurry track */}
+        <motion.circle
+          cx="80"
+          cy="80"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="8"
+          className={cn(stroke, "transition-colors duration-500 blur-md opacity-50")}
+          strokeDasharray={strokeDasharray}
+          initial={{ strokeDashoffset: arcLength }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          transform="rotate(180 80 80)"
+          strokeLinecap="round"
+        />
+
         {/* Progress Track */}
         <motion.circle
           cx="80"
@@ -57,7 +75,7 @@ export function ScoreGauge({ score, classification }: ScoreGaugeProps) {
           r={radius}
           fill="none"
           stroke="currentColor"
-          strokeWidth="12"
+          strokeWidth="8"
           className={cn(stroke, "transition-colors duration-500")}
           strokeDasharray={strokeDasharray}
           initial={{ strokeDashoffset: arcLength }}
@@ -67,16 +85,16 @@ export function ScoreGauge({ score, classification }: ScoreGaugeProps) {
           strokeLinecap="round"
         />
       </svg>
-      <div className="absolute bottom-2 flex flex-col items-center text-center">
+      <div className="absolute bottom-0 flex flex-col items-center text-center z-20">
         <motion.span 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className={cn("text-5xl font-display font-bold tracking-tight", text)}
+          className={cn("text-4xl font-bold tracking-tight", text)}
         >
           {score}
         </motion.span>
-        <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mt-1">
+        <span className="text-xs uppercase tracking-wide text-muted-foreground mt-1">
           Risk Score
         </span>
       </div>
