@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScoreGauge } from '@/components/ScoreGauge';
 import { HighlightText } from '@/components/HighlightText';
 import { useAnalyzeEmail } from '@workspace/api-client-react';
+import { cn } from '@/lib/utils';
 
 const PRELOADED_EMAILS = [
   {
