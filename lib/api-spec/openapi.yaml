@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: PhishShield AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: phishing
+    description: Phishing detection operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /analyze:
+    post:
+      operationId: analyzeEmail
+      tags: [phishing]
+      summary: Analyze email for phishing
+      description: Analyzes email text and returns phishing detection results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +59,131 @@ components:
           type: string
       required:
         - status
-
+    AnalyzeRequest:
+      type: object
+      properties:
+        emailText:
+          type: string
+          description: The raw email text to analyze
+      required:
+        - emailText
+    UrlAnalysis:
+      type: object
+      properties:
+        url:
+          type: string
+        domain:
+          type: string
+        riskScore:
+          type: number
+        flags:
+          type: array
+          items:
+            type: string
+        isSuspicious:
+          type: boolean
+      required:
+        - url
+        - domain
+        - riskScore
+        - flags
+        - isSuspicious
+    DetectionReason:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [urgency, financial, social_engineering, url, domain, india_specific, ml_score, language]
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high]
+        matchedTerms:
+          type: array
+          items:
+            type: string
+      required:
+        - category
+        - description
+        - severity
+        - matchedTerms
+    SuspiciousSpan:
+      type: object
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+        text:
+          type: string
+        reason:
+          type: string
+      required:
+        - start
+        - end
+        - text
+        - reason
+    AnalyzeResult:
+      type: object
+      properties:
+        riskScore:
+          type: number
+          description: Risk score from 0 to 100
+        classification:
+          type: string
+          enum: [safe, suspicious, phishing]
+        confidence:
+          type: number
+          description: Confidence level 0-1
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/DetectionReason"
+        suspiciousSpans:
+          type: array
+          items:
+            $ref: "#/components/schemas/SuspiciousSpan"
+        urlAnalyses:
+          type: array
+          items:
+            $ref: "#/components/schemas/UrlAnalysis"
+        safetyTips:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        mlScore:
+          type: number
+          description: Raw ML model probability
+        ruleScore:
+          type: number
+          description: Rule-based score component
+        urlScore:
+          type: number
+          description: URL risk score component
+      required:
+        - riskScore
+        - classification
+        - confidence
+        - reasons
+        - suspiciousSpans
+        - urlAnalyses
+        - safetyTips
+        - warnings
+        - mlScore
+        - ruleScore
+        - urlScore
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message

@@ -1,0 +1,109 @@
+You are an expert AI software architect, senior full-stack engineer, and cybersecurity specialist.
+
+Build a production-quality, demo-ready web application called "PhishShield AI" for a national-level hackathon. The goal is to create a highly reliable, explainable, real-time phishing detection system tailored for Indian users.
+
+STRICT REQUIREMENTS:
+
+1. PRODUCT QUALITY:
+- The application must feel like a real-world SaaS product, not a student prototype
+- Clean, modern UI with professional layout
+- Zero crashes, graceful error handling everywhere
+- Fast response (under 1 second for detection)
+
+2. CORE FEATURES:
+- Input: User pastes email text
+- Action: “Scan Email” button
+- Output must include:
+  - Risk Score (0–100)
+  - Classification (Safe / Suspicious / Phishing)
+  - Detailed explanation (multi-point reasoning)
+  - Highlight suspicious words directly in the email text
+  - Extract and analyze all URLs/domains
+
+3. DETECTION ENGINE (HYBRID INTELLIGENCE):
+Implement a robust hybrid system:
+
+A. Machine Learning:
+- Train a lightweight model (Naive Bayes or Logistic Regression)
+- Use a phishing email dataset (simulate if needed)
+- Preprocess text (tokenization, stopword removal)
+
+B. Rule-Based Engine:
+- Detect urgency words (urgent, verify, account blocked, click now)
+- Detect financial threats and social engineering language
+
+C. URL Intelligence:
+- Detect lookalike domains (paypal vs paypa1)
+- Detect suspicious TLDs and shortened links
+- Flag unknown or mismatched domains
+
+D. Risk Scoring System:
+- Combine ML probability + rule-based weights + URL risk
+- Output a final normalized score (0–100)
+
+4. EXPLAINABLE AI (VERY IMPORTANT):
+- Provide clear reasons:
+  - “Urgent language detected”
+  - “Suspicious domain pattern”
+  - “High phishing probability”
+- Show confidence level
+- Make explanation human-readable
+
+5. INDIA-SPECIFIC INTELLIGENCE:
+- Include phishing patterns for:
+  - SBI, HDFC, ICICI scams
+  - UPI (Paytm, PhonePe, GPay)
+- Support detection of simple Hindi/Telugu phishing phrases
+- Add realistic Indian phishing examples for demo
+
+6. USER SAFETY SYSTEM:
+- Show warnings:
+  - “Do NOT click this link”
+  - “Likely financial scam”
+- Provide safety tips:
+  - Verify sender
+  - Avoid unknown links
+
+7. UI/UX (TOP-NOTCH):
+- Minimal, clean dashboard
+- Color-coded results:
+  - Green (Safe)
+  - Yellow (Suspicious)
+  - Red (Phishing)
+- Highlight risky words in red inside text
+- Card-based result layout
+- Optional: small analytics section (e.g., detection breakdown)
+
+8. RELIABILITY & FAIL-SAFE:
+- No dependency on external APIs
+- Fully functional offline
+- Add fallback logic if ML model fails
+- Handle empty input, invalid text, and edge cases
+
+9. TECH STACK:
+- Backend: Python (FastAPI preferred)
+- Frontend: HTML/CSS or lightweight React
+- Optional: Streamlit for rapid UI
+- Keep architecture simple but scalable
+
+10. DEMO OPTIMIZATION:
+- Include preloaded sample emails:
+  - phishing (bank/UPI scam)
+  - safe emails
+- Add “Try Demo” button for judges
+- Ensure 1-click demonstration flow
+
+11. CODE QUALITY:
+- Modular structure (separate ML, rules, UI)
+- Clean, readable, well-commented code
+- No unnecessary complexity
+
+12. GOAL:
+Deliver a polished, high-impact, hackathon-winning product that demonstrates:
+- real-world relevance
+- strong technical thinking
+- explainable AI
+- smooth user experience
+
+Think like a product engineer, not a student.
+Prioritize stability, clarity, and demo excellence over unnecessary complexity.
