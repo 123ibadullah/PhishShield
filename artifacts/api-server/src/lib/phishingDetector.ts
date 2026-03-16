@@ -278,7 +278,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
       severity: sev,
       matchedTerms: urgencyMatched.slice(0, 6),
     });
-    totalScore += Math.min(urgencyMatched.length * 8, 35);
+    totalScore += Math.min(15 + (urgencyMatched.length - 1) * 10, 45);
   }
 
   const financialMatched = FINANCIAL_SCAM_WORDS.filter((w) => lowerText.includes(w));
@@ -291,7 +291,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
       severity: sev,
       matchedTerms: financialMatched.slice(0, 6),
     });
-    totalScore += Math.min(financialMatched.length * 6, 30);
+    totalScore += Math.min(15 + (financialMatched.length - 1) * 8, 35);
   }
 
   const socialMatched = SOCIAL_ENGINEERING_WORDS.filter((w) => lowerText.includes(w));
@@ -304,7 +304,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
       severity: sev,
       matchedTerms: socialMatched.slice(0, 6),
     });
-    totalScore += Math.min(socialMatched.length * 5, 25);
+    totalScore += Math.min(10 + (socialMatched.length - 1) * 7, 30);
   }
 
   const bankMatched = INDIA_SPECIFIC_BANKS.filter((b) => lowerText.includes(b));
@@ -312,14 +312,14 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
   if (bankMatched.length > 0 || serviceMatched.length > 0) {
     const terms = [...bankMatched, ...serviceMatched];
     allMatchedTerms.push(...terms);
-    if (totalScore > 10) {
+    if (totalScore > 8) {
       reasons.push({
         category: "india_specific",
         description: `Indian bank/payment service impersonation detected — a common phishing tactic in India`,
         severity: "high",
         matchedTerms: terms.slice(0, 6),
       });
-      totalScore += 20;
+      totalScore += 25;
     }
   }
 
@@ -390,20 +390,33 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     });
   }
 
-  const combinedScore = Math.round(mlScore * 0.35 + ruleScore * 0.40 + urlScore * 0.25);
-  const finalScore = Math.min(combinedScore, 100);
+  const combinedScore = Math.round(mlScore * 0.30 + ruleScore * 0.45 + urlScore * 0.25);
+
+  // Combination boosters — multiple strong signals together are far more dangerous
+  const hasUrgency = ruleReasons.some((r) => r.category === "urgency");
+  const hasSuspiciousUrl = suspiciousUrls.length > 0;
+  const hasFinancial = ruleReasons.some((r) => r.category === "financial");
+  const hasImpersonation = ruleReasons.some((r) => r.category === "india_specific");
+
+  let bonusScore = 0;
+  if (hasUrgency && hasSuspiciousUrl) bonusScore += 20;
+  if (hasSuspiciousUrl && hasFinancial) bonusScore += 20;
+  if (hasImpersonation && hasUrgency) bonusScore += 15;
+  if (hasUrgency && hasSuspiciousUrl && hasFinancial) bonusScore += 10;
+
+  const finalScore = Math.min(combinedScore + bonusScore, 100);
 
   let classification: "safe" | "suspicious" | "phishing";
   let confidence: number;
-  if (finalScore >= 60) {
+  if (finalScore >= 61) {
     classification = "phishing";
     confidence = 0.5 + finalScore / 200;
-  } else if (finalScore >= 30) {
+  } else if (finalScore >= 31) {
     classification = "suspicious";
-    confidence = 0.5 + Math.abs(finalScore - 30) / 100;
+    confidence = 0.5 + Math.abs(finalScore - 31) / 100;
   } else {
     classification = "safe";
-    confidence = 0.5 + (30 - finalScore) / 60;
+    confidence = 0.5 + (31 - finalScore) / 62;
   }
   confidence = Math.min(Math.round(confidence * 100) / 100, 0.99);
 

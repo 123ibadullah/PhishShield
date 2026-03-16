@@ -1,0 +1,94 @@
+You are improving my existing project “PhishShield AI”.
+
+IMPORTANT: The system is currently detecting phishing signals correctly (urgency, suspicious URL, impersonation), but the FINAL RISK SCORE and CLASSIFICATION are weak.
+
+GOAL: Fix the risk scoring logic so that clearly malicious emails are classified as HIGH RISK (Phishing), not Safe.
+
+---
+
+## PROBLEM TO FIX
+
+Example issue:
+
+* Email contains urgency + fake URL + financial trigger
+* But system outputs low score (~20–40) and labels it SAFE
+
+This is incorrect.
+
+---
+
+## REQUIRED FIX
+
+1. IMPROVE RISK SCORING LOGIC
+
+Update scoring so that strong signals have higher weight.
+
+Implement weighted scoring:
+
+* Urgency words → +15
+* Suspicious URL detected → +30
+* Domain impersonation (e.g., SBI, UPI, PayPal) → +25
+* Generic greeting (“Dear User”, “Dear Customer”) → +10
+* Financial keywords (UPI, bank, account, verify) → +15
+
+Combine scores intelligently (do NOT keep total low if multiple risks exist).
+
+---
+
+2. ADD COMBINATION RULES (VERY IMPORTANT)
+
+If multiple strong signals exist, boost score:
+
+* If (urgency + suspicious URL) → add extra +20
+* If (URL + financial keywords) → add extra +20
+* If (impersonation + urgency) → add extra +15
+
+---
+
+3. FIX FINAL CLASSIFICATION
+
+Update thresholds:
+
+* 0–30 → SAFE
+* 31–60 → SUSPICIOUS
+* 61–100 → PHISHING
+
+---
+
+4. ENSURE CONSISTENCY
+
+For cases like:
+
+* Fake bank email + urgency + link
+  → MUST always result in PHISHING (score > 65)
+
+---
+
+5. KEEP EXPLANATION SAME
+
+Do NOT remove explanation system.
+Keep showing:
+
+* urgency detected
+* suspicious link
+* impersonation
+* etc.
+
+---
+
+6. OPTIONAL (GOOD IMPROVEMENT)
+
+Normalize score to max 100.
+
+---
+
+FINAL GOAL:
+A realistic system where:
+
+* Safe emails → low score
+* Suspicious emails → medium score
+* Clear phishing emails → high score (70+)
+
+The system should behave like a real cybersecurity tool, not random scoring.
+
+Make minimal changes to structure but improve decision accuracy significantly.
