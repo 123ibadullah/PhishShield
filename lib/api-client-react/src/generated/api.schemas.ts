@@ -10,7 +10,6 @@ export interface HealthStatus {
 }
 
 export interface AnalyzeRequest {
-  /** The raw email text to analyze */
   emailText: string;
 }
 
@@ -69,22 +68,59 @@ export const AnalyzeResultClassification = {
 } as const;
 
 export interface AnalyzeResult {
-  /** Risk score from 0 to 100 */
   riskScore: number;
   classification: AnalyzeResultClassification;
-  /** Confidence level 0-1 */
   confidence: number;
+  /** Detected language code: en, hi, te, mixed */
+  detectedLanguage: string;
   reasons: DetectionReason[];
   suspiciousSpans: SuspiciousSpan[];
   urlAnalyses: UrlAnalysis[];
   safetyTips: string[];
   warnings: string[];
-  /** Raw ML model probability */
   mlScore: number;
-  /** Rule-based score component */
   ruleScore: number;
-  /** URL risk score component */
   urlScore: number;
+}
+
+export type ScanHistoryItemClassification =
+  (typeof ScanHistoryItemClassification)[keyof typeof ScanHistoryItemClassification];
+
+export const ScanHistoryItemClassification = {
+  safe: "safe",
+  suspicious: "suspicious",
+  phishing: "phishing",
+} as const;
+
+export interface ScanHistoryItem {
+  id: string;
+  /** ISO 8601 timestamp */
+  timestamp: string;
+  /** First 80 characters of the email text */
+  emailPreview: string;
+  riskScore: number;
+  classification: ScanHistoryItemClassification;
+  detectedLanguage: string;
+  urlCount: number;
+  reasonCount: number;
+}
+
+export interface ModelMetrics {
+  /** Model accuracy 0-1 */
+  accuracy: number;
+  /** Precision 0-1 */
+  precision: number;
+  /** Recall 0-1 */
+  recall: number;
+  /** F1 score 0-1 */
+  f1Score: number;
+  /** False positive rate 0-1 */
+  falsePositiveRate: number;
+  /** Total scans in current session */
+  totalScans: number;
+  phishingDetected: number;
+  suspiciousDetected: number;
+  safeDetected: number;
 }
 
 export interface ErrorResponse {

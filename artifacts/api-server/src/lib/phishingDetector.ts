@@ -6,6 +6,17 @@ type UrlAnalysisType = z.infer<typeof UrlAnalysis>;
 type DetectionReasonType = z.infer<typeof DetectionReason>;
 type SuspiciousSpanType = z.infer<typeof SuspiciousSpan>;
 
+function detectLanguage(text: string): string {
+  const devanagariRange = /[\u0900-\u097F]/;
+  const teluguRange = /[\u0C00-\u0C7F]/;
+  const hasHindi = devanagariRange.test(text);
+  const hasTelugu = teluguRange.test(text);
+  if (hasHindi && hasTelugu) return "mixed";
+  if (hasHindi) return "hi";
+  if (hasTelugu) return "te";
+  return "en";
+}
+
 const URGENCY_WORDS = [
   "urgent", "urgently", "immediately", "expire", "expires", "expiring", "expired",
   "block", "blocked", "suspend", "suspended", "suspension", "terminate", "terminated",
@@ -417,11 +428,13 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
   ];
 
   const suspiciousSpans = findSuspiciousSpans(emailText, allTerms.slice(0, 30));
+  const detectedLanguage = detectLanguage(emailText);
 
   return AnalyzeEmailResponse.parse({
     riskScore: finalScore,
     classification,
     confidence,
+    detectedLanguage,
     reasons: ruleReasons,
     suspiciousSpans,
     urlAnalyses,

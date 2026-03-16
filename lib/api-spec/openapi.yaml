@@ -17,7 +17,6 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -30,7 +29,6 @@ paths:
       operationId: analyzeEmail
       tags: [phishing]
       summary: Analyze email for phishing
-      description: Analyzes email text and returns phishing detection results
       requestBody:
         required: true
         content:
@@ -50,6 +48,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /history:
+    get:
+      operationId: getScanHistory
+      tags: [phishing]
+      summary: Get recent scan history
+      responses:
+        "200":
+          description: Recent scan history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanHistoryItem"
+    delete:
+      operationId: clearScanHistory
+      tags: [phishing]
+      summary: Clear scan history
+      responses:
+        "200":
+          description: History cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /metrics:
+    get:
+      operationId: getModelMetrics
+      tags: [phishing]
+      summary: Get model performance metrics
+      responses:
+        "200":
+          description: Model metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelMetrics"
 components:
   schemas:
     HealthStatus:
@@ -64,7 +99,6 @@ components:
       properties:
         emailText:
           type: string
-          description: The raw email text to analyze
       required:
         - emailText
     UrlAnalysis:
@@ -129,13 +163,14 @@ components:
       properties:
         riskScore:
           type: number
-          description: Risk score from 0 to 100
         classification:
           type: string
           enum: [safe, suspicious, phishing]
         confidence:
           type: number
-          description: Confidence level 0-1
+        detectedLanguage:
+          type: string
+          description: "Detected language code: en, hi, te, mixed"
         reasons:
           type: array
           items:
@@ -158,17 +193,15 @@ components:
             type: string
         mlScore:
           type: number
-          description: Raw ML model probability
         ruleScore:
           type: number
-          description: Rule-based score component
         urlScore:
           type: number
-          description: URL risk score component
       required:
         - riskScore
         - classification
         - confidence
+        - detectedLanguage
         - reasons
         - suspiciousSpans
         - urlAnalyses
@@ -177,6 +210,74 @@ components:
         - mlScore
         - ruleScore
         - urlScore
+    ScanHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          description: ISO 8601 timestamp
+        emailPreview:
+          type: string
+          description: First 80 characters of the email text
+        riskScore:
+          type: number
+        classification:
+          type: string
+          enum: [safe, suspicious, phishing]
+        detectedLanguage:
+          type: string
+        urlCount:
+          type: integer
+        reasonCount:
+          type: integer
+      required:
+        - id
+        - timestamp
+        - emailPreview
+        - riskScore
+        - classification
+        - detectedLanguage
+        - urlCount
+        - reasonCount
+    ModelMetrics:
+      type: object
+      properties:
+        accuracy:
+          type: number
+          description: Model accuracy 0-1
+        precision:
+          type: number
+          description: Precision 0-1
+        recall:
+          type: number
+          description: Recall 0-1
+        f1Score:
+          type: number
+          description: F1 score 0-1
+        falsePositiveRate:
+          type: number
+          description: False positive rate 0-1
+        totalScans:
+          type: integer
+          description: Total scans in current session
+        phishingDetected:
+          type: integer
+        suspiciousDetected:
+          type: integer
+        safeDetected:
+          type: integer
+      required:
+        - accuracy
+        - precision
+        - recall
+        - f1Score
+        - falsePositiveRate
+        - totalScans
+        - phishingDetected
+        - suspiciousDetected
+        - safeDetected
     ErrorResponse:
       type: object
       properties:

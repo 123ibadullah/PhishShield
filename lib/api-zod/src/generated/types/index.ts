@@ -14,5 +14,8 @@ export * from "./detectionReasonCategory";
 export * from "./detectionReasonSeverity";
 export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./modelMetrics";
+export * from "./scanHistoryItem";
+export * from "./scanHistoryItemClassification";
 export * from "./suspiciousSpan";
 export * from "./urlAnalysis";

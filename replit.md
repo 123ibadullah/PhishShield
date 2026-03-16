@@ -17,17 +17,20 @@ Production-quality phishing email detection SaaS for Indian users. Built for nat
 - **Build**: esbuild (CJS bundle)
 - **Frontend**: React + Vite, Tailwind CSS, Framer Motion, Lucide React
 
-## Features
+## Completed Features
 
 - Hybrid phishing detection: ML scoring + rule-based engine + URL analysis
 - India-specific intelligence: SBI, HDFC, ICICI, UPI (Paytm/PhonePe/GPay) patterns
-- Hindi/Telugu phishing phrase detection
+- Hindi/Telugu phishing phrase detection (Unicode Devanagari + Telugu range detection)
 - Real-time risk scoring (0-100) with Safe/Suspicious/Phishing classification
-- Explainable AI with human-readable reasons
+- Explainable AI with human-readable reasons and severity levels
 - Suspicious word highlighting in email text
 - URL lookalike domain detection
 - Preloaded demo emails for hackathon presentation
 - Fully offline — no external APIs required
+- **Dashboard tab**: Model metrics (accuracy/precision/recall/F1/FPR) + session scan history
+- **Scan history**: In-memory store of last 10 scans with classification, language, URL count
+- **Language badge**: Detected language shown in results (English/Hindi/Telugu/Mixed)
 
 ## Structure
 
@@ -47,7 +50,10 @@ artifacts-monorepo/
 ## Key API Endpoints
 
 - `GET /api/healthz` — Health check
-- `POST /api/analyze` — Analyze email for phishing, returns risk score, classification, reasons, URL analysis, suspicious spans
+- `POST /api/analyze` — Analyze email; returns riskScore, classification, detectedLanguage, reasons, urlAnalyses, suspiciousSpans
+- `GET /api/history` — Last 10 scans this session (in-memory)
+- `DELETE /api/history` — Clear scan history
+- `GET /api/metrics` — Model metrics (accuracy/precision/recall/F1/FPR) + session counts
 
 ## Detection Engine
 

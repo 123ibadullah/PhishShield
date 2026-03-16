@@ -21,6 +21,8 @@ import type {
   AnalyzeResult,
   ErrorResponse,
   HealthStatus,
+  ModelMetrics,
+  ScanHistoryItem,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -33,7 +35,6 @@ type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const getHealthCheckUrl = () => {
@@ -109,7 +110,6 @@ export function useHealthCheck<
 }
 
 /**
- * Analyzes email text and returns phishing detection results
  * @summary Analyze email for phishing
  */
 export const getAnalyzeEmailUrl = () => {
@@ -194,3 +194,234 @@ export const useAnalyzeEmail = <
 > => {
   return useMutation(getAnalyzeEmailMutationOptions(options));
 };
+
+/**
+ * @summary Get recent scan history
+ */
+export const getGetScanHistoryUrl = () => {
+  return `/api/history`;
+};
+
+export const getScanHistory = async (
+  options?: RequestInit,
+): Promise<ScanHistoryItem[]> => {
+  return customFetch<ScanHistoryItem[]>(getGetScanHistoryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetScanHistoryQueryKey = () => {
+  return [`/api/history`] as const;
+};
+
+export const getGetScanHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getScanHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getScanHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetScanHistoryQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getScanHistory>>> = ({
+    signal,
+  }) => getScanHistory({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getScanHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetScanHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getScanHistory>>
+>;
+export type GetScanHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get recent scan history
+ */
+
+export function useGetScanHistory<
+  TData = Awaited<ReturnType<typeof getScanHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getScanHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetScanHistoryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Clear scan history
+ */
+export const getClearScanHistoryUrl = () => {
+  return `/api/history`;
+};
+
+export const clearScanHistory = async (
+  options?: RequestInit,
+): Promise<HealthStatus> => {
+  return customFetch<HealthStatus>(getClearScanHistoryUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getClearScanHistoryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearScanHistory>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clearScanHistory>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["clearScanHistory"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clearScanHistory>>,
+    void
+  > = () => {
+    return clearScanHistory(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClearScanHistoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clearScanHistory>>
+>;
+
+export type ClearScanHistoryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Clear scan history
+ */
+export const useClearScanHistory = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearScanHistory>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clearScanHistory>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getClearScanHistoryMutationOptions(options));
+};
+
+/**
+ * @summary Get model performance metrics
+ */
+export const getGetModelMetricsUrl = () => {
+  return `/api/metrics`;
+};
+
+export const getModelMetrics = async (
+  options?: RequestInit,
+): Promise<ModelMetrics> => {
+  return customFetch<ModelMetrics>(getGetModelMetricsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetModelMetricsQueryKey = () => {
+  return [`/api/metrics`] as const;
+};
+
+export const getGetModelMetricsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getModelMetrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getModelMetrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetModelMetricsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getModelMetrics>>> = ({
+    signal,
+  }) => getModelMetrics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getModelMetrics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetModelMetricsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getModelMetrics>>
+>;
+export type GetModelMetricsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get model performance metrics
+ */
+
+export function useGetModelMetrics<
+  TData = Awaited<ReturnType<typeof getModelMetrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getModelMetrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetModelMetricsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

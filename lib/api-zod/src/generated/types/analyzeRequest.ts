@@ -7,6 +7,5 @@
  */
 
 export interface AnalyzeRequest {
-  /** The raw email text to analyze */
   emailText: string;
 }

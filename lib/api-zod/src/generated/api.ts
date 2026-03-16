@@ -8,7 +8,6 @@
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -16,17 +15,19 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Analyzes email text and returns phishing detection results
  * @summary Analyze email for phishing
  */
 export const AnalyzeEmailBody = zod.object({
-  emailText: zod.string().describe("The raw email text to analyze"),
+  emailText: zod.string(),
 });
 
 export const AnalyzeEmailResponse = zod.object({
-  riskScore: zod.number().describe("Risk score from 0 to 100"),
+  riskScore: zod.number(),
   classification: zod.enum(["safe", "suspicious", "phishing"]),
-  confidence: zod.number().describe("Confidence level 0-1"),
+  confidence: zod.number(),
+  detectedLanguage: zod
+    .string()
+    .describe("Detected language code: en, hi, te, mixed"),
   reasons: zod.array(
     zod.object({
       category: zod.enum([
@@ -63,7 +64,44 @@ export const AnalyzeEmailResponse = zod.object({
   ),
   safetyTips: zod.array(zod.string()),
   warnings: zod.array(zod.string()),
-  mlScore: zod.number().describe("Raw ML model probability"),
-  ruleScore: zod.number().describe("Rule-based score component"),
-  urlScore: zod.number().describe("URL risk score component"),
+  mlScore: zod.number(),
+  ruleScore: zod.number(),
+  urlScore: zod.number(),
+});
+
+/**
+ * @summary Get recent scan history
+ */
+export const GetScanHistoryResponseItem = zod.object({
+  id: zod.string(),
+  timestamp: zod.string().describe("ISO 8601 timestamp"),
+  emailPreview: zod.string().describe("First 80 characters of the email text"),
+  riskScore: zod.number(),
+  classification: zod.enum(["safe", "suspicious", "phishing"]),
+  detectedLanguage: zod.string(),
+  urlCount: zod.number(),
+  reasonCount: zod.number(),
+});
+export const GetScanHistoryResponse = zod.array(GetScanHistoryResponseItem);
+
+/**
+ * @summary Clear scan history
+ */
+export const ClearScanHistoryResponse = zod.object({
+  status: zod.string(),
+});
+
+/**
+ * @summary Get model performance metrics
+ */
+export const GetModelMetricsResponse = zod.object({
+  accuracy: zod.number().describe("Model accuracy 0-1"),
+  precision: zod.number().describe("Precision 0-1"),
+  recall: zod.number().describe("Recall 0-1"),
+  f1Score: zod.number().describe("F1 score 0-1"),
+  falsePositiveRate: zod.number().describe("False positive rate 0-1"),
+  totalScans: zod.number().describe("Total scans in current session"),
+  phishingDetected: zod.number(),
+  suspiciousDetected: zod.number(),
+  safeDetected: zod.number(),
 });

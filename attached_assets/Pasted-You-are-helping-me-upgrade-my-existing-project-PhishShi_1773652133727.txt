@@ -1,0 +1,153 @@
+You are helping me upgrade my existing project “PhishShield AI” into a complete, hackathon-winning prototype.
+
+IMPORTANT: This is NOT a basic demo. The goal is to align 100% with the following requirements:
+
+* Phishing classification model
+* Multilingual analysis (English + at least 1 Indian language like Hindi or Telugu)
+* URL/domain risk detection module
+* Real-time or simulated email scanning
+* Risk scoring and alert system
+* Dashboard with alerts and metrics (accuracy, precision, recall, false positive rate)
+
+I already have a basic project structure using:
+
+* Python (Flask backend)
+* Scikit-learn (basic ML)
+* HTML/CSS/JS frontend
+
+Your task is to UPGRADE and COMPLETE this system to a strong, realistic, working prototype.
+
+---
+
+## CORE FEATURES TO IMPLEMENT
+
+1. PHISHING ML MODEL (IMPROVE)
+
+* Use a proper text classification pipeline (TF-IDF + Logistic Regression or Naive Bayes)
+* Train on phishing + legitimate datasets
+* Clean and preprocess text (lowercase, remove stopwords, etc.)
+* Output probability score (not just label)
+
+2. EXPLAINABLE OUTPUT (IMPORTANT USP)
+
+* Do NOT use heavy libraries like SHAP if complex
+* Instead:
+
+  * Highlight suspicious keywords (e.g., “urgent”, “verify”, “click now”)
+  * Show reasons like:
+    “Contains urgency words”
+    “Suspicious link detected”
+    “Domain mismatch”
+* Return explanation along with prediction
+
+3. URL / DOMAIN RISK DETECTION (UPGRADE)
+
+* Implement checks:
+
+  * URL length
+  * presence of IP address
+  * suspicious keywords in URL
+  * http vs https
+* Optional (if simple): use a public API for domain reputation
+* Combine results into a risk score
+
+4. MULTILINGUAL SUPPORT (REALISTIC)
+
+* Support English + Hindi (or Telugu)
+* Use simple approach:
+
+  * Detect language using a library
+  * Translate non-English text to English (using lightweight API or library)
+* Then run ML model on translated text
+
+5. REAL-TIME / SIMULATED EMAIL INPUT
+
+* Create input box where user pastes email content
+* Also allow sample “test emails” button
+* Process instantly and return result
+
+6. RISK SCORING SYSTEM
+
+* Combine:
+
+  * ML probability
+  * URL risk score
+* Output:
+  LOW / MEDIUM / HIGH risk
+* Example:
+  0–0.4 → Low
+  0.4–0.7 → Medium
+  0.7+ → High
+
+7. DASHBOARD (IMPORTANT FOR JUDGES)
+
+* Show:
+
+  * Risk level
+  * Explanation
+  * Detected issues
+* Maintain simple history (last 5–10 scans)
+* Display:
+
+  * Accuracy, Precision, Recall (use static or calculated values)
+
+---
+
+## UI REQUIREMENTS
+
+* Clean, minimal interface
+* Input area (email text)
+* Analyze button
+* Output card:
+
+  * Risk score
+  * Risk level (color-coded)
+  * Explanation
+* Dashboard section:
+
+  * Recent scans
+  * Metrics
+
+---
+
+## PROJECT STRUCTURE
+
+backend/
+app.py
+model.py
+utils.py
+
+frontend/
+index.html
+style.css
+script.js
+
+---
+
+## IMPORTANT RULES
+
+* Keep code SIMPLE and readable
+* Do NOT overcomplicate with heavy frameworks
+* Focus on DEMO + CLARITY (hackathon priority)
+* Everything should RUN properly
+
+---
+
+## FINAL GOAL
+
+A fully working prototype where:
+User enters email → system analyzes → detects phishing → checks URL → assigns risk score → explains why → displays result on dashboard.
+
+The system must feel REAL, not fake.
+
+---
+
+## OUTPUT EXPECTED
+
+* Complete backend code
+* ML model training code
+* Frontend UI
+* Integration working end-to-end
+* Clear instructions to run
+
+Build this step by step and ensure everything is functional.

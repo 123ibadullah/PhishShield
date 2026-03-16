@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { AnalyzeEmailBody } from "@workspace/api-zod";
 import { analyzeEmail } from "../lib/phishingDetector.js";
+import { addToHistory } from "../lib/historyStore.js";
 
 const router: IRouter = Router();
 
@@ -34,6 +35,16 @@ router.post("/analyze", (req, res) => {
     }
 
     const result = analyzeEmail(emailText);
+
+    addToHistory({
+      emailText,
+      riskScore: result.riskScore,
+      classification: result.classification,
+      detectedLanguage: result.detectedLanguage,
+      urlCount: result.urlAnalyses.length,
+      reasonCount: result.reasons.length,
+    });
+
     res.json(result);
   } catch (err) {
     console.error("Error analyzing email:", err);

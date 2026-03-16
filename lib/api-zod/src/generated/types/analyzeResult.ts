@@ -11,20 +11,17 @@ import type { SuspiciousSpan } from "./suspiciousSpan";
 import type { UrlAnalysis } from "./urlAnalysis";
 
 export interface AnalyzeResult {
-  /** Risk score from 0 to 100 */
   riskScore: number;
   classification: AnalyzeResultClassification;
-  /** Confidence level 0-1 */
   confidence: number;
+  /** Detected language code: en, hi, te, mixed */
+  detectedLanguage: string;
   reasons: DetectionReason[];
   suspiciousSpans: SuspiciousSpan[];
   urlAnalyses: UrlAnalysis[];
   safetyTips: string[];
   warnings: string[];
-  /** Raw ML model probability */
   mlScore: number;
-  /** Rule-based score component */
   ruleScore: number;
-  /** URL risk score component */
   urlScore: number;
 }
