@@ -408,12 +408,12 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
 
   let classification: "safe" | "suspicious" | "phishing";
   let confidence: number;
-  if (finalScore >= 61) {
+  if (finalScore >= 71) {
     classification = "phishing";
     confidence = 0.5 + finalScore / 200;
   } else if (finalScore >= 31) {
     classification = "suspicious";
-    confidence = 0.5 + Math.abs(finalScore - 31) / 100;
+    confidence = 0.5 + Math.abs(finalScore - 31) / 80;
   } else {
     classification = "safe";
     confidence = 0.5 + (31 - finalScore) / 62;

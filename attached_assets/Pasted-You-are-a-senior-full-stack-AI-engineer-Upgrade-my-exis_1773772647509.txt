@@ -1,0 +1,91 @@
+You are a senior full-stack AI engineer. Upgrade my existing phishing detection project "PhishShield AI" to fully align with a hackathon problem statement.
+
+GOAL:
+Make the system NOT just a demo, but a complete, working prototype that matches every requirement mentioned in the PPT and problem statement.
+
+CURRENT SYSTEM:
+- Email input analysis
+- Keyword detection
+- URL detection
+- Risk score
+- Basic classification
+
+NOW IMPLEMENT / IMPROVE THESE FEATURES:
+
+1. REAL-TIME / SIMULATED SCANNING
+- Allow continuous email input simulation (multiple emails)
+- Show instant result without reload
+- Add loading + processing indicator
+
+2. MULTILINGUAL DETECTION (IMPORTANT)
+- Detect language (English + basic Hindi or Telugu)
+- If not full model, implement keyword-based detection for regional languages
+- Show detected language in UI
+
+3. ADVANCED FEATURE ENGINEERING
+- URL features: length, suspicious words, domain pattern
+- Text features: urgency words, financial keywords, impersonation patterns
+- Combine features into a structured scoring system
+
+4. MACHINE LEARNING IMPROVEMENT
+- Use trained model (Logistic Regression or Naive Bayes)
+- Show probability score (confidence)
+- Combine ML output + rule-based scoring
+
+5. RISK SCORING SYSTEM
+- Final score (0–100)
+- Categories:
+  - 0–30 = Safe
+  - 31–70 = Suspicious
+  - 71–100 = Phishing
+
+6. EXPLAINABLE AI (VERY IMPORTANT)
+- Show "Why this email is flagged"
+- Highlight:
+  - urgency detected
+  - suspicious URL
+  - fake domain
+  - impersonation (SBI, UPI, etc.)
+- Keep explanations simple and human-readable
+
+7. DASHBOARD (REQUIRED BY HACKATHON)
+- Show:
+  - total emails scanned
+  - phishing vs safe count
+  - recent scans list
+- Basic charts or counters (simple UI)
+
+8. PERFORMANCE METRICS (SIMULATED OK)
+- Show:
+  - Accuracy
+  - Precision
+  - Recall
+  - False Positive Rate
+- Use dummy or calculated values if full training not available
+
+9. UI IMPROVEMENT
+- Clean, modern, human-like UI
+- No AI-generated feel
+- Clear sections:
+  - Input
+  - Result
+  - Explanation
+  - Dashboard
+
+10. KEEP EVERYTHING SIMPLE BUT REAL
+- No fake features
+- No placeholders like "coming soon"
+- If something is basic, make it look real and working
+
+OUTPUT REQUIRED:
+- Fully working web app (frontend + backend)
+- Clean folder structure
+- README.md explaining:
+  - how it works
+  - features
+  - limitations (if any)
+
+IMPORTANT:
+This is for a hackathon. The system must look realistic, practical, and explainable — not over-engineered.
+
+Focus on clarity, working demo, and trust.

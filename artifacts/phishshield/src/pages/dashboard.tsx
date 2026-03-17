@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ShieldCheck, ShieldAlert, AlertTriangle, Fingerprint, Network,
-  Link as LinkIcon, CheckCircle, ChevronDown, RefreshCw, Loader2,
-  Mail, Eye, Flag, BarChart3, History, Trash2, Globe, Languages
+  ShieldCheck, ShieldAlert, AlertTriangle,
+  CheckCircle, ChevronDown, RefreshCw, Loader2,
+  Mail, Eye, Flag, BarChart3, History, Trash2, Globe, Languages,
+  TrendingUp, Scan
 } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScoreGauge } from '@/components/ScoreGauge';
@@ -472,57 +474,195 @@ export default function Dashboard() {
               transition={{ duration: 0.25 }}
               className="space-y-8"
             >
-              {/* Model Metrics */}
+              {/* ── Scan Summary Stats ── */}
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <Scan className="w-4 h-4 text-primary" />
+                    Session Overview
+                  </h2>
+                  {history.length > 0 && (
+                    <button
+                      onClick={handleClearHistory}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Reset session
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                  {[
+                    { label: 'Total Scanned', value: metrics?.totalScans ?? 0, color: 'text-foreground', sub: 'emails this session' },
+                    { label: 'Phishing', value: metrics?.phishingDetected ?? 0, color: 'text-destructive', sub: 'high-risk detected' },
+                    { label: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, color: 'text-warning', sub: 'need caution' },
+                    { label: 'Safe', value: metrics?.safeDetected ?? 0, color: 'text-safe', sub: 'clean emails' },
+                  ].map(({ label, value, color, sub }) => (
+                    <div key={label} className="rounded-xl border border-card-border bg-card p-4 text-center">
+                      <p className={cn("text-3xl font-bold font-mono", color)}>{value}</p>
+                      <p className="text-xs font-medium text-foreground mt-1">{label}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Donut chart + risk scale side by side */}
+                <div className="rounded-xl border border-card-border bg-card p-5">
+                  {(metrics?.totalScans ?? 0) === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <BarChart3 className="w-10 h-10 text-muted-foreground/20 mb-3" />
+                      <p className="text-sm text-muted-foreground">Scan some emails to see the breakdown chart.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                      {/* Donut chart */}
+                      <div className="w-full sm:w-64 h-52 shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: 'Phishing', value: metrics?.phishingDetected ?? 0 },
+                                { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0 },
+                                { name: 'Safe', value: metrics?.safeDetected ?? 0 },
+                              ].filter(d => d.value > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={55}
+                              outerRadius={80}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              <Cell fill="hsl(var(--destructive))" />
+                              <Cell fill="hsl(var(--warning))" />
+                              <Cell fill="hsl(var(--safe))" />
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                              itemStyle={{ color: 'hsl(var(--foreground))' }}
+                            />
+                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Threat breakdown bars */}
+                      <div className="flex-1 w-full space-y-4">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Threat breakdown</p>
+                        {[
+                          { label: 'Phishing', value: metrics?.phishingDetected ?? 0, total: metrics?.totalScans ?? 1, barClass: 'bg-destructive' },
+                          { label: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, total: metrics?.totalScans ?? 1, barClass: 'bg-warning' },
+                          { label: 'Safe', value: metrics?.safeDetected ?? 0, total: metrics?.totalScans ?? 1, barClass: 'bg-safe' },
+                        ].map(({ label, value, total, barClass }) => {
+                          const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                          return (
+                            <div key={label} className="space-y-1.5">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground font-medium">{label}</span>
+                                <span className="text-foreground font-mono">{value} <span className="text-muted-foreground">({pct}%)</span></span>
+                              </div>
+                              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                <motion.div
+                                  className={cn("h-full rounded-full", barClass)}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${pct}%` }}
+                                  transition={{ duration: 0.8, ease: "easeOut" }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+                          <span className="text-warning font-medium">{
+                            (metrics?.totalScans ?? 0) > 0
+                              ? `${Math.round(((metrics?.phishingDetected ?? 0) + (metrics?.suspiciousDetected ?? 0)) / (metrics?.totalScans ?? 1) * 100)}% of scanned emails were flagged`
+                              : 'Scan emails to see statistics'
+                          }</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* ── Risk Scale Reference ── */}
+              <section>
+                <h2 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  Risk Score Reference
+                </h2>
+                <div className="rounded-xl border border-card-border bg-card p-5">
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {[
+                      { range: '0 – 30', label: 'Safe', desc: 'No significant threat signals detected', color: 'text-safe', bg: 'bg-safe/10', border: 'border-safe/20' },
+                      { range: '31 – 70', label: 'Suspicious', desc: 'Some risk signals — proceed with caution', color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20' },
+                      { range: '71 – 100', label: 'Phishing', desc: 'High-confidence threat — do not interact', color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20' },
+                    ].map(({ range, label, desc, color, bg, border }) => (
+                      <div key={label} className={cn("rounded-lg border p-3 text-center", bg, border)}>
+                        <p className={cn("text-lg font-bold font-mono", color)}>{range}</p>
+                        <p className={cn("text-sm font-semibold mt-0.5", color)}>{label}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="h-3 w-full rounded-full overflow-hidden flex">
+                    <div className="flex-[30] bg-safe" />
+                    <div className="flex-[40] bg-warning" />
+                    <div className="flex-[30] bg-destructive" />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1 font-mono">
+                    <span>0</span><span>30</span><span>70</span><span>100</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Model Performance ── */}
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" />
                     Model Performance
                   </h2>
-                  <span className="text-xs text-muted-foreground">TF-IDF + Logistic Regression · Trained on 11,000+ emails</span>
+                  <span className="text-xs text-muted-foreground">TF-IDF + Logistic Regression · 11,000+ emails</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { label: 'Accuracy', value: metrics?.accuracy, color: 'text-primary' },
-                    { label: 'Precision', value: metrics?.precision, color: 'text-safe' },
-                    { label: 'Recall', value: metrics?.recall, color: 'text-safe' },
-                    { label: 'F1 Score', value: metrics?.f1Score, color: 'text-accent' },
-                    { label: 'False Positive Rate', value: metrics?.falsePositiveRate, color: 'text-warning', invert: true },
-                  ].map(({ label, value, color, invert }) => (
+                    { label: 'Accuracy', value: metrics?.accuracy, color: 'text-primary', desc: 'Overall correct predictions' },
+                    { label: 'Precision', value: metrics?.precision, color: 'text-safe', desc: 'Of flagged emails, truly phishing' },
+                    { label: 'Recall', value: metrics?.recall, color: 'text-safe', desc: 'Phishing emails actually caught' },
+                    { label: 'F1 Score', value: metrics?.f1Score, color: 'text-accent', desc: 'Precision–recall balance' },
+                  ].map(({ label, value, color, desc }) => (
                     <div key={label} className="rounded-xl border border-card-border bg-card p-4">
-                      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                      <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">{label}</p>
                       <p className={cn("text-2xl font-bold font-mono", color)}>
                         {value !== undefined ? `${(value * 100).toFixed(1)}%` : '—'}
                       </p>
-                      {invert && value !== undefined && (
-                        <p className="text-[10px] text-muted-foreground mt-1">Lower is better</p>
-                      )}
+                      <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{desc}</p>
                     </div>
                   ))}
+                </div>
 
-                  {/* Session scans summary card */}
-                  <div className="rounded-xl border border-card-border bg-card p-4 flex flex-col justify-between">
-                    <p className="text-xs text-muted-foreground mb-2">Session Scans</p>
-                    <div className="space-y-1.5">
-                      {[
-                        { label: 'Total', value: metrics?.totalScans ?? 0, color: 'text-foreground' },
-                        { label: 'Phishing', value: metrics?.phishingDetected ?? 0, color: 'text-destructive' },
-                        { label: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, color: 'text-warning' },
-                        { label: 'Safe', value: metrics?.safeDetected ?? 0, color: 'text-safe' },
-                      ].map(({ label, value, color }) => (
-                        <div key={label} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">{label}</span>
-                          <span className={cn("font-mono font-semibold", color)}>{value}</span>
-                        </div>
-                      ))}
-                    </div>
+                <div className="mt-3 rounded-xl border border-card-border bg-card p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-muted-foreground font-medium">False Positive Rate</span>
+                    <span className="text-xs font-mono text-warning">
+                      {metrics ? `${(metrics.falsePositiveRate * 100).toFixed(1)}%` : '—'} <span className="text-muted-foreground">(lower is better)</span>
+                    </span>
+                  </div>
+                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-warning rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(metrics?.falsePositiveRate ?? 0) * 100}%` }}
+                      transition={{ duration: 0.8 }}
+                    />
                   </div>
                 </div>
 
-                {/* Accuracy bar */}
                 {metrics && (
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-3 space-y-1.5">
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Overall accuracy</span>
                       <span className="font-mono text-foreground">{(metrics.accuracy * 100).toFixed(1)}%</span>
@@ -535,41 +675,11 @@ export default function Dashboard() {
                         transition={{ duration: 1, ease: "easeOut" }}
                       />
                     </div>
-                    <div className="flex justify-between text-[10px] text-muted-foreground/60">
-                      <span>0%</span>
-                      <span>100%</span>
-                    </div>
                   </div>
                 )}
               </section>
 
-              {/* Multilingual Support */}
-              <section>
-                <h2 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
-                  <Globe className="w-4 h-4 text-primary" />
-                  Multilingual Support
-                </h2>
-                <div className="rounded-xl border border-card-border bg-card p-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                      { flag: '🇬🇧', lang: 'English', desc: 'Full detection — urgency, financial, social engineering patterns', status: 'Full support' },
-                      { flag: '🇮🇳', lang: 'Hindi', desc: 'Devanagari script detection — तुरंत, बंद, इनाम and more', status: 'Active' },
-                      { flag: '🇮🇳', lang: 'Telugu', desc: 'Telugu script detection with Unicode range matching', status: 'Active' },
-                    ].map(({ flag, lang, desc, status }) => (
-                      <div key={lang} className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{flag}</span>
-                          <span className="font-medium text-sm text-foreground">{lang}</span>
-                          <span className="text-[10px] text-safe bg-safe/10 px-1.5 py-0.5 rounded-full">{status}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {/* Scan History */}
+              {/* ── Recent Scans ── */}
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
@@ -579,15 +689,6 @@ export default function Dashboard() {
                       <span className="text-xs text-muted-foreground font-normal">({history.length})</span>
                     )}
                   </h2>
-                  {history.length > 0 && (
-                    <button
-                      onClick={handleClearHistory}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Clear
-                    </button>
-                  )}
                 </div>
 
                 {history.length === 0 ? (
@@ -603,10 +704,7 @@ export default function Dashboard() {
                         const c = classificationColor(item.classification);
                         return (
                           <div key={item.id} className="flex items-center gap-4 px-4 py-3.5 hover:bg-secondary/30 transition-colors">
-                            {/* Color dot */}
                             <div className={cn("w-2 h-2 rounded-full shrink-0", c.bar)} />
-
-                            {/* Email preview */}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-foreground truncate font-mono">{item.emailPreview}</p>
                               <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
@@ -615,8 +713,6 @@ export default function Dashboard() {
                                 {item.urlCount > 0 && <span>{item.urlCount} link{item.urlCount !== 1 ? 's' : ''}</span>}
                               </div>
                             </div>
-
-                            {/* Score + classification */}
                             <div className="text-right shrink-0">
                               <p className={cn("text-sm font-bold font-mono", c.text)}>{item.riskScore}</p>
                               <p className={cn("text-[10px] uppercase font-medium tracking-wide", c.text)}>{item.classification}</p>
@@ -629,27 +725,54 @@ export default function Dashboard() {
                 )}
               </section>
 
-              {/* India Context */}
-              <section className="rounded-xl border border-card-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  🇮🇳 India-specific detection
-                </h3>
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  {[
-                    'SBI, HDFC, ICICI, PNB impersonation',
-                    'Paytm, PhonePe, GPay scams',
-                    'UPI KYC fraud patterns',
-                    'IRCTC, Aadhaar, PAN phishing',
-                    'Hindi & Telugu phishing text',
-                    'Lookalike .xyz, .tk, .ml domains',
-                  ].map((item) => (
-                    <div key={item} className="flex items-start gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-safe shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
+              {/* ── Multilingual + India Intelligence ── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <section className="rounded-xl border border-card-border bg-card p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    Multilingual Detection
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { flag: '🇬🇧', lang: 'English', status: 'Full support', desc: 'Urgency, financial, social engineering' },
+                      { flag: '🇮🇳', lang: 'Hindi', status: 'Active', desc: 'Devanagari — तुरंत, बंद, इनाम' },
+                      { flag: '🇮🇳', lang: 'Telugu', status: 'Active', desc: 'Unicode range matching' },
+                    ].map(({ flag, lang, status, desc }) => (
+                      <div key={lang} className="flex items-start gap-2">
+                        <span className="text-base shrink-0">{flag}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium text-foreground">{lang}</span>
+                            <span className="text-[9px] text-safe bg-safe/10 px-1.5 py-0.5 rounded-full">{status}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="rounded-xl border border-card-border bg-card p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    🇮🇳 India-specific patterns
+                  </h3>
+                  <div className="grid grid-cols-1 gap-1.5 text-xs text-muted-foreground">
+                    {[
+                      'SBI, HDFC, ICICI, PNB impersonation',
+                      'Paytm, PhonePe, GPay reward scams',
+                      'UPI KYC fraud patterns',
+                      'IRCTC, Aadhaar, PAN phishing',
+                      'Hindi & Telugu scam phrases',
+                      'Lookalike .xyz, .tk, .ml domains',
+                    ].map((item) => (
+                      <div key={item} className="flex items-start gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-safe shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
 
             </motion.div>
           )}
