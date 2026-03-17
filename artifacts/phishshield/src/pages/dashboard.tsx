@@ -17,32 +17,32 @@ import { cn } from '@/lib/utils';
 const PRELOADED_EMAILS = [
   {
     id: 'sbi',
-    label: 'SBI Bank Alert (Phishing)',
+    label: 'SBI account suspension notice',
     text: "Dear Customer, Your SBI account has been suspended due to suspicious activity. Click here immediately to verify: http://sbi-secure-update.xyz/verify?token=abc123 Your account will be permanently blocked in 24 hours. Call 1800-XXX-XXXX urgently. -- SBI Customer Care"
   },
   {
     id: 'upi',
-    label: 'UPI Reward Claim (Scam)',
+    label: 'GPay reward claim',
     text: "Congratulations! You have won Rs. 50,000 in GPay reward program. To claim your prize, verify your UPI ID at http://gpay-reward.tk/claim and complete KYC. Offer expires in 2 hours! Transaction ID: TXN8823991"
   },
   {
     id: 'paytm',
-    label: 'Paytm KYC (Scam)',
+    label: 'Paytm KYC verification request',
     text: "URGENT: Your Paytm wallet has been blocked. Complete KYC verification immediately at http://paytm-kyc.ml/update or lose Rs. 12,500 wallet balance. Enter OTP sent to your number. Support: 1800-258-38XX"
   },
   {
     id: 'hindi',
-    label: 'Hindi Bank Scam (Phishing)',
+    label: 'SBI notice in Hindi',
     text: "प्रिय ग्राहक, आपका SBI बैंक खाता तुरंत बंद हो जाएगा। अभी सत्यापन करें: http://sbi-verify.xyz/kyc?id=12345 OTP किसी के साथ साझा न करें। अभी क्लिक करें! -- SBI ग्राहक सेवा"
   },
   {
     id: 'office',
-    label: 'Office Meeting (Safe)',
+    label: 'Internal team meeting invite',
     text: "Hi Team, Please join the project sync meeting tomorrow at 3 PM IST in the main conference room. Agenda has been shared on Google Calendar. Let me know if you have any questions. Best, Priya"
   },
   {
     id: 'amazon',
-    label: 'Amazon Order (Safe)',
+    label: 'Amazon shipment notification',
     text: "Your Amazon order #402-8837291-XXXXXX has been shipped. Expected delivery: March 18. Track your package at amazon.in/orders. Thank you for shopping with Amazon."
   }
 ];
@@ -51,24 +51,24 @@ const LANG_LABELS: Record<string, string> = {
   en: 'English',
   hi: 'Hindi',
   te: 'Telugu',
-  mixed: 'Mixed',
+  mixed: 'Mixed script',
 };
 
-const LANG_FLAGS: Record<string, string> = {
-  en: '🇬🇧',
-  hi: '🇮🇳',
-  te: '🇮🇳',
-  mixed: '🌐',
+const LANG_CODES: Record<string, string> = {
+  en: 'EN',
+  hi: 'HI',
+  te: 'TE',
+  mixed: 'MX',
 };
 
 const categoryMap: Record<string, string> = {
-  urgency: "Creates urgency",
-  social_engineering: "Manipulation tactics",
+  urgency: "Urgency pressure",
+  social_engineering: "Social engineering",
   india_specific: "Brand impersonation",
-  url: "Suspicious links",
-  financial: "Financial threats",
-  language: "Regional language scam",
-  ml_score: "AI detection",
+  url: "Suspicious link",
+  financial: "Financial lure",
+  language: "Regional language",
+  ml_score: "Pattern analysis",
   domain: "Domain risk",
 };
 
@@ -190,7 +190,7 @@ export default function Dashboard() {
 
             <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md border border-border/50">
               <div className="w-1.5 h-1.5 rounded-full bg-safe animate-pulse" />
-              Engine Active
+              Detection active
             </div>
           </div>
         </div>
@@ -225,7 +225,7 @@ export default function Dashboard() {
                       className="text-xs h-8 bg-transparent border-muted hover:bg-muted"
                       onClick={() => setShowDemos(!showDemos)}
                     >
-                      Load Demo <ChevronDown className="w-3 h-3 ml-1" />
+                      Load sample <ChevronDown className="w-3 h-3 ml-1" />
                     </Button>
 
                     <AnimatePresence>
@@ -270,7 +270,7 @@ export default function Dashboard() {
 
                 <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
                   <div className="text-[11px] text-muted-foreground">
-                    🔒 Offline &middot; No data stored
+                    Offline &middot; No data stored
                   </div>
                   <Button
                     onClick={handleScan}
@@ -321,7 +321,7 @@ export default function Dashboard() {
                               {/* Language badge */}
                               <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
                                 <Languages className="w-3.5 h-3.5" />
-                                <span>{LANG_FLAGS[result.detectedLanguage] ?? '🌐'} {LANG_LABELS[result.detectedLanguage] ?? result.detectedLanguage} detected</span>
+                                <span><span className="font-mono text-[10px] bg-secondary px-1 py-0.5 rounded mr-1">{LANG_CODES[result.detectedLanguage] ?? 'MX'}</span>{LANG_LABELS[result.detectedLanguage] ?? result.detectedLanguage} detected</span>
                               </div>
                             </div>
                             <ScoreGauge score={result.riskScore} classification={result.classification} />
@@ -364,7 +364,7 @@ export default function Dashboard() {
                     {/* 4. Why We Flagged This */}
                     {result.reasons.length > 0 && (
                       <div className="space-y-4 pt-4">
-                        <h3 className="text-lg font-semibold text-foreground">Why we flagged this</h3>
+                        <h3 className="text-lg font-semibold text-foreground">What raised our concern</h3>
                         <div className="space-y-3">
                           {result.reasons.map((reason, i) => (
                             <div key={i} className="flex items-start gap-3">
@@ -447,7 +447,7 @@ export default function Dashboard() {
                     {/* 7. Before You Act */}
                     {result.safetyTips.length > 0 && (
                       <div className="space-y-4 pt-4 border-t border-border/50">
-                        <h3 className="text-lg font-semibold text-foreground">Before you act</h3>
+                        <h3 className="text-lg font-semibold text-foreground">What to do next</h3>
                         <div className="space-y-3">
                           {result.safetyTips.slice(0, 4).map((tip, i) => (
                             <div key={i} className="flex items-start gap-3">
@@ -479,7 +479,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <Scan className="w-4 h-4 text-primary" />
-                    Session Overview
+                    Scan Summary
                   </h2>
                   {history.length > 0 && (
                     <button
@@ -590,7 +590,7 @@ export default function Dashboard() {
               <section>
                 <h2 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
                   <TrendingUp className="w-4 h-4 text-primary" />
-                  Risk Score Reference
+                  Risk Distribution
                 </h2>
                 <div className="rounded-xl border border-card-border bg-card p-5">
                   <div className="grid grid-cols-3 gap-3 mb-4">
@@ -622,7 +622,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" />
-                    Model Performance
+                    Detection Accuracy
                   </h2>
                   <span className="text-xs text-muted-foreground">TF-IDF + Logistic Regression · 11,000+ emails</span>
                 </div>
@@ -684,7 +684,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <History className="w-4 h-4 text-primary" />
-                    Recent Scans
+                    Recent Activity
                     {history.length > 0 && (
                       <span className="text-xs text-muted-foreground font-normal">({history.length})</span>
                     )}
@@ -709,7 +709,7 @@ export default function Dashboard() {
                               <p className="text-sm text-foreground truncate font-mono">{item.emailPreview}</p>
                               <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
                                 <span>{formatDate(item.timestamp)} · {formatTime(item.timestamp)}</span>
-                                <span>{LANG_FLAGS[item.detectedLanguage] ?? '🌐'} {LANG_LABELS[item.detectedLanguage] ?? item.detectedLanguage}</span>
+                                <span><span className="font-mono bg-secondary px-1 rounded">{LANG_CODES[item.detectedLanguage] ?? 'MX'}</span> {LANG_LABELS[item.detectedLanguage] ?? item.detectedLanguage}</span>
                                 {item.urlCount > 0 && <span>{item.urlCount} link{item.urlCount !== 1 ? 's' : ''}</span>}
                               </div>
                             </div>
@@ -730,16 +730,16 @@ export default function Dashboard() {
                 <section className="rounded-xl border border-card-border bg-card p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                     <Globe className="w-4 h-4 text-primary" />
-                    Multilingual Detection
+                    Language Support
                   </h3>
                   <div className="space-y-3">
                     {[
-                      { flag: '🇬🇧', lang: 'English', status: 'Full support', desc: 'Urgency, financial, social engineering' },
-                      { flag: '🇮🇳', lang: 'Hindi', status: 'Active', desc: 'Devanagari — तुरंत, बंद, इनाम' },
-                      { flag: '🇮🇳', lang: 'Telugu', status: 'Active', desc: 'Unicode range matching' },
-                    ].map(({ flag, lang, status, desc }) => (
+                      { code: 'EN', lang: 'English', status: 'Full support', desc: 'Urgency, financial, social engineering' },
+                      { code: 'HI', lang: 'Hindi', status: 'Active', desc: 'Devanagari — तुरंत, बंद, इनाम' },
+                      { code: 'TE', lang: 'Telugu', status: 'Active', desc: 'Unicode range matching' },
+                    ].map(({ code, lang, status, desc }) => (
                       <div key={lang} className="flex items-start gap-2">
-                        <span className="text-base shrink-0">{flag}</span>
+                        <span className="font-mono text-[10px] bg-secondary px-1.5 py-0.5 rounded shrink-0 mt-0.5">{code}</span>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-medium text-foreground">{lang}</span>

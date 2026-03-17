@@ -1,0 +1,118 @@
+You are a senior full-stack engineer, product designer, and technical writer.
+
+Your task is to BOTH:
+1) Generate a complete README.md
+2) Improve the application so it looks natural, human-built, and production-ready (NOT AI-generated)
+
+----------------------------------------
+PART 1: CREATE COMPLETE README.md
+----------------------------------------
+
+Generate a single, detailed README.md file for "PhishShield AI".
+
+GOAL:
+- Anyone reading ONLY this file should fully understand the project
+- It should feel like written by an experienced human developer
+- Clean, structured, professional
+
+Include:
+1. Project Overview
+2. Problem Statement (India phishing context)
+3. Key Features
+4. System Architecture (step-by-step flow)
+5. Feature Engineering (with reasoning)
+6. ML Model explanation
+7. Risk Scoring Logic (0–30, 31–70, 71–100)
+8. Explainable AI
+9. Dashboard explanation
+10. Demo flow
+11. Tech Stack
+12. Project Structure
+13. Limitations (honest)
+14. Future Scope
+15. Why this project is unique
+
+Tone:
+- Natural
+- Clear
+- Not robotic
+- No AI-like phrasing
+
+----------------------------------------
+PART 2: MAKE APP LOOK HUMAN-BUILT
+----------------------------------------
+
+IMPORTANT GOAL:
+The application must NOT look AI-generated.
+It should look like a real developer built it carefully.
+
+DO THESE IMPROVEMENTS:
+
+1. UI CLEANUP
+- Remove overly perfect symmetry
+- Add slight spacing variations
+- Use realistic padding/margins
+- Avoid generic template look
+
+2. TEXT NATURALIZATION
+- Replace robotic phrases like:
+  "Suspicious patterns detected"
+  WITH
+  "This email is trying to create urgency and may not be genuine"
+
+- Use human-friendly language everywhere
+
+3. COLOR & DESIGN
+- Use consistent color palette:
+  Blue (trust), Red (danger), Green (safe)
+- Avoid random colors
+- Keep it minimal and professional
+
+4. COMPONENT REALISM
+- Add small UI imperfections:
+  slightly varied card sizes
+  realistic section spacing
+- Avoid identical blocks everywhere
+
+5. LOADING & FEEDBACK
+- Add:
+  "Analyzing email..."
+  subtle loader animation
+
+6. RESULT DISPLAY
+- Make output feel like:
+  a real security product
+  not a demo
+
+7. DASHBOARD IMPROVEMENT
+- Clean layout
+- Clear section labels:
+  "Scan Summary"
+  "Recent Activity"
+  "Risk Distribution"
+
+8. REMOVE AI-GENERATED SIGNS
+- No emojis
+- No overly perfect alignment
+- No generic headings like "Feature 1, Feature 2"
+- No repetitive phrasing
+
+9. KEEP IT SIMPLE BUT REAL
+- No fake features
+- No placeholder text
+- Everything should feel usable
+
+----------------------------------------
+FINAL OUTPUT REQUIREMENTS:
+----------------------------------------
+
+1. Provide the complete README.md
+2. Apply all UI/UX improvements in code
+3. Ensure the project looks:
+   - natural
+   - human-built
+   - practical
+   - hackathon-ready
+
+Do NOT overcomplicate.
+Focus on clarity, realism, and usability.

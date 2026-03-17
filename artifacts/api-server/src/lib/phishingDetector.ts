@@ -274,7 +274,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
     const sev = urgencyMatched.length >= 3 ? "high" : urgencyMatched.length >= 2 ? "medium" : "low";
     reasons.push({
       category: "urgency",
-      description: `Urgency language detected — creates false sense of emergency to pressure you`,
+      description: `This email is trying to rush you into action. Words like "urgent", "blocked", or "verify now" are a common tactic used to prevent you from pausing to check whether the message is genuine.`,
       severity: sev,
       matchedTerms: urgencyMatched.slice(0, 6),
     });
@@ -287,7 +287,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
     const sev = financialMatched.length >= 4 ? "high" : financialMatched.length >= 2 ? "medium" : "low";
     reasons.push({
       category: "financial",
-      description: `Financial threat or reward language detected — common in bank/UPI scams`,
+      description: `The email references money, bank accounts, or digital payments. Scammers use financial language to grab your attention and exploit concerns about your account or wallet.`,
       severity: sev,
       matchedTerms: financialMatched.slice(0, 6),
     });
@@ -300,7 +300,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
     const sev = socialMatched.length >= 3 ? "high" : "medium";
     reasons.push({
       category: "social_engineering",
-      description: `Social engineering patterns found — attempts to manipulate you into action`,
+      description: `This email is written to sound like it comes from someone you should trust. Phrases like "Dear Customer" and "click here" are used to make the message feel personal and authoritative.`,
       severity: sev,
       matchedTerms: socialMatched.slice(0, 6),
     });
@@ -315,7 +315,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
     if (totalScore > 8) {
       reasons.push({
         category: "india_specific",
-        description: `Indian bank/payment service impersonation detected — a common phishing tactic in India`,
+        description: `The sender appears to be impersonating a well-known Indian bank or payment platform. Scammers frequently clone real brands to appear legitimate — your actual bank will never ask for credentials over email.`,
         severity: "high",
         matchedTerms: terms.slice(0, 6),
       });
@@ -329,7 +329,7 @@ function computeRuleScore(text: string): { score: number; reasons: DetectionReas
     allMatchedTerms.push(...hindiMatched);
     reasons.push({
       category: "language",
-      description: `Hindi/regional urgency language detected — localized phishing attempt`,
+      description: `This message contains Hindi words that commonly appear in regionally targeted phishing. Scammers use local language to make the email feel more familiar and trustworthy to Indian readers.`,
       severity: "medium",
       matchedTerms: hindiMatched,
     });
@@ -375,7 +375,9 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
   if (suspiciousUrls.length > 0) {
     ruleReasons.push({
       category: "url",
-      description: `${suspiciousUrls.length} suspicious URL(s) detected — may redirect to fake/malicious sites`,
+      description: suspiciousUrls.length === 1
+        ? `We found a link in this email that looks suspicious. Clicking it may take you to a fake website designed to steal your information or credentials.`
+        : `We found ${suspiciousUrls.length} links in this email that look suspicious. These may redirect to fake websites designed to steal information or install malware.`,
       severity: suspiciousUrls.some((u) => u.riskScore >= 60) ? "high" : "medium",
       matchedTerms: [...new Set(allUrlFlags)].slice(0, 5),
     });
@@ -422,12 +424,12 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
 
   const warnings: string[] = [];
   if (classification === "phishing") {
-    warnings.push("Do NOT click any links in this email");
-    warnings.push("Likely a financial scam or account takeover attempt");
-    if (suspiciousUrls.length > 0) warnings.push("This email contains dangerous URLs — do not visit them");
+    warnings.push("Do not click any links or reply to this email. This appears to be a phishing attempt.");
+    if (suspiciousUrls.length > 0) warnings.push("The links in this email lead to suspicious domains — not the real websites they claim to be.");
+    warnings.push("If you think your account may actually be at risk, contact the organization directly using their official number or website.");
   } else if (classification === "suspicious") {
-    warnings.push("Exercise caution — this email shows suspicious patterns");
-    warnings.push("Verify the sender before taking any action");
+    warnings.push("This email has some unusual patterns. Verify that it is genuine before clicking any links or sharing any information.");
+    warnings.push("If in doubt, contact the sender through a different channel — phone or official website — before acting.");
   }
 
   const safetyTips = [
