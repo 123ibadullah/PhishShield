@@ -7,6 +7,8 @@
  */
 import type { AnalyzeResultClassification } from "./analyzeResultClassification";
 import type { DetectionReason } from "./detectionReason";
+import type { FeatureImportance } from "./featureImportance";
+import type { HeaderAnalysis } from "./headerAnalysis";
 import type { SuspiciousSpan } from "./suspiciousSpan";
 import type { UrlAnalysis } from "./urlAnalysis";
 
@@ -24,4 +26,9 @@ export interface AnalyzeResult {
   mlScore: number;
   ruleScore: number;
   urlScore: number;
+  /** Risk score contribution from email header analysis (0-100) */
+  headerScore: number;
+  /** Top ML features contributing to the score */
+  featureImportance: FeatureImportance[];
+  headerAnalysis?: HeaderAnalysis;
 }

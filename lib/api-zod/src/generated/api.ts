@@ -39,6 +39,7 @@ export const AnalyzeEmailResponse = zod.object({
         "india_specific",
         "ml_score",
         "language",
+        "header",
       ]),
       description: zod.string(),
       severity: zod.enum(["low", "medium", "high"]),
@@ -67,6 +68,40 @@ export const AnalyzeEmailResponse = zod.object({
   mlScore: zod.number(),
   ruleScore: zod.number(),
   urlScore: zod.number(),
+  headerScore: zod
+    .number()
+    .describe("Risk score contribution from email header analysis (0-100)"),
+  featureImportance: zod
+    .array(
+      zod.object({
+        feature: zod
+          .string()
+          .describe("The vocabulary term that contributed to the ML score"),
+        contribution: zod
+          .number()
+          .describe("Magnitude of the contribution (always positive)"),
+        direction: zod
+          .enum(["phishing", "safe"])
+          .describe(
+            "Whether the term pushed the score toward phishing or safe",
+          ),
+      }),
+    )
+    .describe("Top ML features contributing to the score"),
+  headerAnalysis: zod
+    .object({
+      hasHeaders: zod.boolean(),
+      senderEmail: zod.string().optional(),
+      senderDomain: zod.string().optional(),
+      displayName: zod.string().optional(),
+      replyToEmail: zod.string().optional(),
+      replyToDomain: zod.string().optional(),
+      mismatch: zod.boolean(),
+      spoofingRisk: zod.enum(["none", "low", "medium", "high"]),
+      issues: zod.array(zod.string()),
+      headerScore: zod.number(),
+    })
+    .optional(),
 });
 
 /**

@@ -33,6 +33,7 @@ export const DetectionReasonCategory = {
   india_specific: "india_specific",
   ml_score: "ml_score",
   language: "language",
+  header: "header",
 } as const;
 
 export type DetectionReasonSeverity =
@@ -58,6 +59,49 @@ export interface SuspiciousSpan {
   reason: string;
 }
 
+/**
+ * Whether the term pushed the score toward phishing or safe
+ */
+export type FeatureImportanceDirection =
+  (typeof FeatureImportanceDirection)[keyof typeof FeatureImportanceDirection];
+
+export const FeatureImportanceDirection = {
+  phishing: "phishing",
+  safe: "safe",
+} as const;
+
+export interface FeatureImportance {
+  /** The vocabulary term that contributed to the ML score */
+  feature: string;
+  /** Magnitude of the contribution (always positive) */
+  contribution: number;
+  /** Whether the term pushed the score toward phishing or safe */
+  direction: FeatureImportanceDirection;
+}
+
+export type HeaderAnalysisSpoofingRisk =
+  (typeof HeaderAnalysisSpoofingRisk)[keyof typeof HeaderAnalysisSpoofingRisk];
+
+export const HeaderAnalysisSpoofingRisk = {
+  none: "none",
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export interface HeaderAnalysis {
+  hasHeaders: boolean;
+  senderEmail?: string;
+  senderDomain?: string;
+  displayName?: string;
+  replyToEmail?: string;
+  replyToDomain?: string;
+  mismatch: boolean;
+  spoofingRisk: HeaderAnalysisSpoofingRisk;
+  issues: string[];
+  headerScore: number;
+}
+
 export type AnalyzeResultClassification =
   (typeof AnalyzeResultClassification)[keyof typeof AnalyzeResultClassification];
 
@@ -81,6 +125,11 @@ export interface AnalyzeResult {
   mlScore: number;
   ruleScore: number;
   urlScore: number;
+  /** Risk score contribution from email header analysis (0-100) */
+  headerScore: number;
+  /** Top ML features contributing to the score */
+  featureImportance: FeatureImportance[];
+  headerAnalysis?: HeaderAnalysis;
 }
 
 export type ScanHistoryItemClassification =

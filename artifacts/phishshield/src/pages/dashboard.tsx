@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, ShieldAlert, AlertTriangle,
@@ -36,6 +36,11 @@ const PRELOADED_EMAILS = [
     text: "प्रिय ग्राहक, आपका SBI बैंक खाता तुरंत बंद हो जाएगा। अभी सत्यापन करें: http://sbi-verify.xyz/kyc?id=12345 OTP किसी के साथ साझा न करें। अभी क्लिक करें! -- SBI ग्राहक सेवा"
   },
   {
+    id: 'header_spoof',
+    label: 'Spoofed HDFC header (with headers)',
+    text: `From: HDFC Bank Support <noreply@hdfc-secure.tk>\nReply-To: collect@hacker-form.xyz\nSubject: ACCOUNT SUSPENDED - ACTION REQUIRED\nDate: Mon, 24 Mar 2026 09:00:00 +0530\n\nDear Customer, your HDFC bank account has been suspended due to KYC non-compliance. Click here to verify your OTP immediately and restore access: http://hdfc-kyc-update.xyz/verify?token=abc123. Failure to comply within 24 hours will result in permanent account closure.`
+  },
+  {
     id: 'office',
     label: 'Internal team meeting invite',
     text: "Hi Team, Please join the project sync meeting tomorrow at 3 PM IST in the main conference room. Agenda has been shared on Google Calendar. Let me know if you have any questions. Best, Priya"
@@ -70,6 +75,7 @@ const categoryMap: Record<string, string> = {
   language: "Regional language",
   ml_score: "Pattern analysis",
   domain: "Domain risk",
+  header: "Email header spoofing",
 };
 
 const getHumanCategory = (cat: string) => categoryMap[cat] || cat.replace(/_/g, ' ');
@@ -105,15 +111,45 @@ export default function Dashboard() {
   const [showDemos, setShowDemos] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('analyze');
 
+  const [localHistory, setLocalHistory] = useState<Array<{
+    id: string; timestamp: string; emailPreview: string; riskScore: number;
+    classification: 'safe' | 'suspicious' | 'phishing'; detectedLanguage: string;
+    urlCount: number; reasonCount: number;
+  }>>([]);
+
   const { mutate: analyzeEmail, data: result, isPending, error, reset } = useAnalyzeEmail();
-  const { data: history = [], refetch: refetchHistory } = useGetScanHistory({ query: { refetchOnWindowFocus: false } });
+  const { data: serverHistory = [], refetch: refetchHistory } = useGetScanHistory({ query: { refetchOnWindowFocus: false } });
   const { data: metrics, refetch: refetchMetrics } = useGetModelMetrics({ query: { refetchOnWindowFocus: false } });
   const { mutate: clearHistory } = useClearScanHistory();
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('phishshield_history');
+      if (stored) setLocalHistory(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  const history = serverHistory.length > 0 ? serverHistory : localHistory;
 
   const handleScan = () => {
     if (!emailText.trim()) return;
     analyzeEmail({ data: { emailText } }, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        const newItem = {
+          id: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          emailPreview: emailText.slice(0, 80),
+          riskScore: data.riskScore,
+          classification: data.classification,
+          detectedLanguage: data.detectedLanguage,
+          urlCount: data.urlAnalyses.length,
+          reasonCount: data.reasons.length,
+        };
+        setLocalHistory(prev => {
+          const updated = [newItem, ...prev].slice(0, 20);
+          try { localStorage.setItem('phishshield_history', JSON.stringify(updated)); } catch { /* ignore */ }
+          return updated;
+        });
         refetchHistory();
         refetchMetrics();
       }
@@ -129,6 +165,8 @@ export default function Dashboard() {
   const handleClearHistory = () => {
     clearHistory(undefined, {
       onSuccess: () => {
+        setLocalHistory([]);
+        try { localStorage.removeItem('phishshield_history'); } catch { /* ignore */ }
         refetchHistory();
         refetchMetrics();
       }
@@ -331,25 +369,147 @@ export default function Dashboard() {
                     })()}
 
                     {/* 2. Score Breakdown */}
-                    <div className="flex flex-col sm:flex-row gap-6 pt-2 pb-4 border-b border-border/50">
-                      {[
-                        { label: 'Behavioural Analysis', value: result.mlScore, color: 'bg-primary' },
-                        { label: 'Pattern Matching', value: result.ruleScore, color: 'bg-accent' },
-                        { label: 'Link Risk', value: result.urlScore, color: 'bg-warning' },
-                      ].map(({ label, value, color }) => (
-                        <div key={label} className="flex-1 space-y-2">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground font-medium">{label}</span>
-                            <span className="text-foreground font-mono">{value.toFixed(0)}%</span>
+                    <div className="space-y-3 pt-2 pb-4 border-b border-border/50">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Score components</p>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        {[
+                          { label: 'ML Analysis', value: result.mlScore, color: 'bg-primary', desc: 'TF-IDF + LR' },
+                          { label: 'Pattern Matching', value: result.ruleScore, color: 'bg-accent', desc: 'Rule engine' },
+                          { label: 'Link Risk', value: result.urlScore, color: 'bg-warning', desc: 'URL analysis' },
+                          { label: 'Header Risk', value: result.headerScore, color: 'bg-destructive/70', desc: 'Spoofing detection' },
+                        ].map(({ label, value, color, desc }) => (
+                          <div key={label} className="flex-1 space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <div>
+                                <span className="text-muted-foreground font-medium">{label}</span>
+                                <span className="text-muted-foreground/50 ml-1 text-[10px]">{desc}</span>
+                              </div>
+                              <span className="text-foreground font-mono">{value.toFixed(0)}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                              <div className={cn("h-full transition-all duration-700 rounded-full", color)} style={{ width: `${value}%` }} />
+                            </div>
                           </div>
-                          <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
-                            <div className={cn("h-full transition-all duration-700", color)} style={{ width: `${value}%` }} />
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
 
-                    {/* 3. Warnings */}
+                    {/* 3. Feature Importance (ML Explainability) */}
+                    {result.featureImportance && result.featureImportance.length > 0 && (
+                      <div className="space-y-3 pt-2 pb-4 border-b border-border/50">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                            ML Feature Contributions
+                          </h3>
+                          <span className="text-[10px] text-muted-foreground">TF-IDF × LR weight</span>
+                        </div>
+                        <div className="space-y-2.5">
+                          {result.featureImportance.map((f, i) => {
+                            const maxC = result.featureImportance![0].contribution;
+                            const pct = maxC > 0 ? Math.round((f.contribution / maxC) * 100) : 0;
+                            return (
+                              <div key={i} className="flex items-center gap-3">
+                                <span className={cn(
+                                  "text-xs font-mono shrink-0 w-32 truncate",
+                                  f.direction === 'phishing' ? 'text-destructive' : 'text-safe'
+                                )} title={f.feature}>
+                                  {f.feature}
+                                </span>
+                                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                                  <div
+                                    className={cn("h-full rounded-full transition-all duration-700", f.direction === 'phishing' ? 'bg-destructive/70' : 'bg-safe/70')}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] font-mono text-muted-foreground w-8 text-right shrink-0">{f.contribution.toFixed(2)}</span>
+                                <span className={cn(
+                                  "text-[9px] uppercase font-bold shrink-0 w-8",
+                                  f.direction === 'phishing' ? 'text-destructive' : 'text-safe'
+                                )}>
+                                  {f.direction === 'phishing' ? 'risk' : 'safe'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4. Header Analysis */}
+                    {result.headerAnalysis && result.headerAnalysis.hasHeaders && (
+                      <div className={cn(
+                        "rounded-xl border p-4 space-y-3",
+                        result.headerAnalysis.spoofingRisk === 'high'
+                          ? 'bg-destructive/5 border-destructive/20'
+                          : result.headerAnalysis.spoofingRisk === 'medium'
+                          ? 'bg-warning/5 border-warning/20'
+                          : 'bg-card border-border/50'
+                      )}>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            Email Header Analysis
+                          </h3>
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full",
+                            result.headerAnalysis.spoofingRisk === 'high'
+                              ? 'bg-destructive/15 text-destructive'
+                              : result.headerAnalysis.spoofingRisk === 'medium'
+                              ? 'bg-warning/15 text-warning'
+                              : result.headerAnalysis.spoofingRisk === 'low'
+                              ? 'bg-warning/10 text-warning'
+                              : 'bg-safe/10 text-safe'
+                          )}>
+                            {result.headerAnalysis.spoofingRisk} risk
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          {result.headerAnalysis.senderEmail && (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Sender</p>
+                              <p className="font-mono text-foreground truncate" title={result.headerAnalysis.senderEmail}>{result.headerAnalysis.senderEmail}</p>
+                            </div>
+                          )}
+                          {result.headerAnalysis.displayName && (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Display Name</p>
+                              <p className="font-mono text-foreground truncate">"{result.headerAnalysis.displayName}"</p>
+                            </div>
+                          )}
+                          {result.headerAnalysis.replyToEmail && (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Reply-To</p>
+                              <p className={cn("font-mono truncate", result.headerAnalysis.mismatch ? 'text-destructive font-semibold' : 'text-foreground')}
+                                title={result.headerAnalysis.replyToEmail}>
+                                {result.headerAnalysis.replyToEmail}
+                                {result.headerAnalysis.mismatch && <span className="ml-1 text-[10px] font-bold">⚠ mismatch</span>}
+                              </p>
+                            </div>
+                          )}
+                          {result.headerAnalysis.senderDomain && (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Sender Domain</p>
+                              <p className="font-mono text-foreground truncate">{result.headerAnalysis.senderDomain}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {result.headerAnalysis.issues.length > 0 && (
+                          <div className="border-t border-border/50 pt-3 space-y-2">
+                            {result.headerAnalysis.issues.map((issue, i) => (
+                              <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                                <span className="leading-relaxed">{issue}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 5. Warnings */}
                     {result.warnings.length > 0 && (
                       <div className="space-y-2">
                         {result.warnings.map((warn, i) => (

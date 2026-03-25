@@ -18,4 +18,5 @@ export const DetectionReasonCategory = {
   india_specific: "india_specific",
   ml_score: "ml_score",
   language: "language",
+  header: "header",
 } as const;

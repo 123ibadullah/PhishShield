@@ -1,5 +1,7 @@
 import { AnalyzeEmailResponse, UrlAnalysis, DetectionReason, SuspiciousSpan } from "@workspace/api-zod";
 import { z } from "zod/v4";
+import { tfidfLRScore, FeatureContribution } from "./tfidfModel";
+import { analyzeEmailHeaders, HeaderAnalysis } from "./emailHeaderParser";
 
 type AnalyzeResult = z.infer<typeof AnalyzeEmailResponse>;
 type UrlAnalysisType = z.infer<typeof UrlAnalysis>;
@@ -353,10 +355,13 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
       mlScore: 0,
       ruleScore: 0,
       urlScore: 0,
+      headerScore: 0,
+      featureImportance: [],
     };
   }
 
-  const mlScore = computeMLScore(emailText);
+  const { score: mlScore, topFeatures } = tfidfLRScore(emailText);
+  const headerAnalysis = analyzeEmailHeaders(emailText);
   const { score: ruleScore, reasons: ruleReasons, allTerms } = computeRuleScore(emailText);
 
   const urls = extractUrls(emailText);
@@ -383,6 +388,17 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     });
   }
 
+  // Header-based detection reason
+  const headerScore = headerAnalysis.headerScore;
+  if (headerScore > 0 && headerAnalysis.issues.length > 0) {
+    ruleReasons.push({
+      category: "header",
+      description: headerAnalysis.issues[0],
+      severity: headerScore >= 60 ? "high" : headerScore >= 30 ? "medium" : "low",
+      matchedTerms: headerAnalysis.issues.slice(1, 4),
+    });
+  }
+
   if (urls.length === 0 && ruleReasons.length === 0) {
     ruleReasons.push({
       category: "ml_score",
@@ -392,7 +408,9 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     });
   }
 
-  const combinedScore = Math.round(mlScore * 0.30 + ruleScore * 0.45 + urlScore * 0.25);
+  const combinedScore = Math.round(
+    mlScore * 0.25 + ruleScore * 0.38 + urlScore * 0.22 + headerScore * 0.15
+  );
 
   // Combination boosters — multiple strong signals together are far more dangerous
   const hasUrgency = ruleReasons.some((r) => r.category === "urgency");
@@ -445,6 +463,12 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
   const suspiciousSpans = findSuspiciousSpans(emailText, allTerms.slice(0, 30));
   const detectedLanguage = detectLanguage(emailText);
 
+  const featureImportance = topFeatures.map((f: FeatureContribution) => ({
+    feature: f.feature,
+    contribution: f.contribution,
+    direction: f.direction,
+  }));
+
   return AnalyzeEmailResponse.parse({
     riskScore: finalScore,
     classification,
@@ -458,5 +482,19 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     mlScore,
     ruleScore,
     urlScore,
+    headerScore,
+    featureImportance,
+    headerAnalysis: headerAnalysis.hasHeaders ? {
+      hasHeaders: headerAnalysis.hasHeaders,
+      senderEmail: headerAnalysis.senderEmail,
+      senderDomain: headerAnalysis.senderDomain,
+      displayName: headerAnalysis.displayName,
+      replyToEmail: headerAnalysis.replyToEmail,
+      replyToDomain: headerAnalysis.replyToDomain,
+      mismatch: headerAnalysis.mismatch,
+      spoofingRisk: headerAnalysis.spoofingRisk,
+      issues: headerAnalysis.issues,
+      headerScore: headerAnalysis.headerScore,
+    } : undefined,
   });
 }

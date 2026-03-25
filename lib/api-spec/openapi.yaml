@@ -127,7 +127,7 @@ components:
       properties:
         category:
           type: string
-          enum: [urgency, financial, social_engineering, url, domain, india_specific, ml_score, language]
+          enum: [urgency, financial, social_engineering, url, domain, india_specific, ml_score, language, header]
         description:
           type: string
         severity:
@@ -158,6 +158,55 @@ components:
         - end
         - text
         - reason
+    FeatureImportance:
+      type: object
+      properties:
+        feature:
+          type: string
+          description: The vocabulary term that contributed to the ML score
+        contribution:
+          type: number
+          description: Magnitude of the contribution (always positive)
+        direction:
+          type: string
+          enum: [phishing, safe]
+          description: Whether the term pushed the score toward phishing or safe
+      required:
+        - feature
+        - contribution
+        - direction
+    HeaderAnalysis:
+      type: object
+      properties:
+        hasHeaders:
+          type: boolean
+        senderEmail:
+          type: string
+        senderDomain:
+          type: string
+        displayName:
+          type: string
+        replyToEmail:
+          type: string
+        replyToDomain:
+          type: string
+        mismatch:
+          type: boolean
+        spoofingRisk:
+          type: string
+          enum: [none, low, medium, high]
+        issues:
+          type: array
+          items:
+            type: string
+        headerScore:
+          type: number
+      required:
+        - hasHeaders
+        - mismatch
+        - spoofingRisk
+        - issues
+        - headerScore
     AnalyzeResult:
       type: object
       properties:
@@ -197,6 +246,16 @@ components:
           type: number
         urlScore:
           type: number
+        headerScore:
+          type: number
+          description: Risk score contribution from email header analysis (0-100)
+        featureImportance:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureImportance"
+          description: Top ML features contributing to the score
+        headerAnalysis:
+          $ref: "#/components/schemas/HeaderAnalysis"
       required:
         - riskScore
         - classification
@@ -210,6 +269,8 @@ components:
         - mlScore
         - ruleScore
         - urlScore
+        - headerScore
+        - featureImportance
     ScanHistoryItem:
       type: object
       properties:
