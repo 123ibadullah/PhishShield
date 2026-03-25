@@ -1,8 +1,5 @@
-import { z } from "zod/v4";
-import { GetScanHistoryResponseItem } from "@workspace/api-zod";
+import type { ScanHistoryItem } from "@workspace/api-zod";
 import { randomUUID } from "crypto";
-
-type ScanHistoryItem = z.infer<typeof GetScanHistoryResponseItem>;
 
 const MAX_HISTORY = 10;
 const history: ScanHistoryItem[] = [];

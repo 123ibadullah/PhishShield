@@ -1,12 +1,11 @@
-import { AnalyzeEmailResponse, UrlAnalysis, DetectionReason, SuspiciousSpan } from "@workspace/api-zod";
-import { z } from "zod/v4";
+import { AnalyzeEmailResponse } from "@workspace/api-zod";
+import type { AnalyzeResult, UrlAnalysis, DetectionReason, SuspiciousSpan } from "@workspace/api-zod";
 import { tfidfLRScore, FeatureContribution } from "./tfidfModel";
 import { analyzeEmailHeaders, HeaderAnalysis } from "./emailHeaderParser";
 
-type AnalyzeResult = z.infer<typeof AnalyzeEmailResponse>;
-type UrlAnalysisType = z.infer<typeof UrlAnalysis>;
-type DetectionReasonType = z.infer<typeof DetectionReason>;
-type SuspiciousSpanType = z.infer<typeof SuspiciousSpan>;
+type UrlAnalysisType = UrlAnalysis;
+type DetectionReasonType = DetectionReason;
+type SuspiciousSpanType = SuspiciousSpan;
 
 function detectLanguage(text: string): string {
   const devanagariRange = /[\u0900-\u097F]/;
@@ -347,6 +346,7 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
       riskScore: 0,
       classification: "safe",
       confidence: 1.0,
+      detectedLanguage: "english",
       reasons: [],
       suspiciousSpans: [],
       urlAnalyses: [],

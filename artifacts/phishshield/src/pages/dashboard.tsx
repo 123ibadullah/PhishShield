@@ -118,8 +118,8 @@ export default function Dashboard() {
   }>>([]);
 
   const { mutate: analyzeEmail, data: result, isPending, error, reset } = useAnalyzeEmail();
-  const { data: serverHistory = [], refetch: refetchHistory } = useGetScanHistory({ query: { refetchOnWindowFocus: false } });
-  const { data: metrics, refetch: refetchMetrics } = useGetModelMetrics({ query: { refetchOnWindowFocus: false } });
+  const { data: serverHistory = [], refetch: refetchHistory } = useGetScanHistory();
+  const { data: metrics, refetch: refetchMetrics } = useGetModelMetrics();
   const { mutate: clearHistory } = useClearScanHistory();
 
   useEffect(() => {
