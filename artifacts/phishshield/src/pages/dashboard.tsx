@@ -754,7 +754,7 @@ export default function Dashboard() {
 
                 <section className="rounded-xl border border-card-border bg-card p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    🇮🇳 India-specific patterns
+                    India-specific patterns
                   </h3>
                   <div className="grid grid-cols-1 gap-1.5 text-xs text-muted-foreground">
                     {[
@@ -781,7 +781,7 @@ export default function Dashboard() {
 
       <footer className="mt-8 py-6 border-t border-border/50 text-center">
         <p className="text-xs text-muted-foreground/60 tracking-wide">
-          PhishShield AI — built for India 🇮🇳
+          PhishShield AI — built for India
         </p>
       </footer>
     </div>
