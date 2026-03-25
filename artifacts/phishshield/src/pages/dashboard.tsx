@@ -4,7 +4,7 @@ import {
   ShieldCheck, ShieldAlert, AlertTriangle,
   CheckCircle, ChevronDown, RefreshCw, Loader2,
   Mail, Eye, Flag, BarChart3, History, Trash2, Globe, Languages,
-  TrendingUp, Scan
+  TrendingUp, Scan, Lock, Shield
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -306,10 +306,16 @@ export default function Dashboard() {
                   disabled={isPending}
                 />
 
-                <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
-                  <div className="text-[11px] text-muted-foreground">
-                    Offline &middot; No data stored
+                <div className="mt-3 flex justify-between items-center text-[11px] text-muted-foreground">
+                  <span className="font-mono">{emailText.length > 0 ? `${emailText.length} chars` : ''}</span>
+                  <div className="flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    <span>Content not stored after analysis</span>
                   </div>
+                </div>
+
+                <div className="mt-3 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                  <div />
                   <Button
                     onClick={handleScan}
                     disabled={isPending || !emailText.trim()}
@@ -331,6 +337,25 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* EMPTY STATE GUIDE */}
+              {!result && !isPending && !emailText.trim() && (
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  {[
+                    { icon: <Mail className="w-4 h-4" />, title: 'Paste email', desc: 'Copy the full email — headers, body, links' },
+                    { icon: <Scan className="w-4 h-4" />, title: 'Scan it', desc: 'Our model checks 50+ phishing signals' },
+                    { icon: <ShieldCheck className="w-4 h-4" />, title: 'See the verdict', desc: 'Score 0–100 with detailed explanation' },
+                  ].map(({ icon, title, desc }) => (
+                    <div key={title} className="rounded-xl border border-dashed border-border/40 p-4 flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground">
+                        {icon}
+                      </div>
+                      <p className="text-xs font-medium text-foreground">{title}</p>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* RESULTS */}
               <AnimatePresence mode="wait">
@@ -682,9 +707,9 @@ export default function Dashboard() {
                           <PieChart>
                             <Pie
                               data={[
-                                { name: 'Phishing', value: metrics?.phishingDetected ?? 0 },
-                                { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0 },
-                                { name: 'Safe', value: metrics?.safeDetected ?? 0 },
+                                { name: 'Phishing', value: metrics?.phishingDetected ?? 0, fill: 'hsl(var(--destructive))' },
+                                { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, fill: 'hsl(var(--warning))' },
+                                { name: 'Safe', value: metrics?.safeDetected ?? 0, fill: 'hsl(var(--safe))' },
                               ].filter(d => d.value > 0)}
                               cx="50%"
                               cy="50%"
@@ -693,9 +718,13 @@ export default function Dashboard() {
                               paddingAngle={3}
                               dataKey="value"
                             >
-                              <Cell fill="hsl(var(--destructive))" />
-                              <Cell fill="hsl(var(--warning))" />
-                              <Cell fill="hsl(var(--safe))" />
+                              {[
+                                { name: 'Phishing', value: metrics?.phishingDetected ?? 0, fill: 'hsl(var(--destructive))' },
+                                { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, fill: 'hsl(var(--warning))' },
+                                { name: 'Safe', value: metrics?.safeDetected ?? 0, fill: 'hsl(var(--safe))' },
+                              ].filter(d => d.value > 0).map((entry) => (
+                                <Cell key={entry.name} fill={entry.fill} />
+                              ))}
                             </Pie>
                             <Tooltip
                               contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
@@ -914,6 +943,7 @@ export default function Dashboard() {
 
                 <section className="rounded-xl border border-card-border bg-card p-5">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
                     India-specific patterns
                   </h3>
                   <div className="grid grid-cols-1 gap-1.5 text-xs text-muted-foreground">
