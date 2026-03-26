@@ -172,6 +172,33 @@
     .btn-back    { background: #22c55e; color: #fff; }
     .btn-proceed { background: #1e293b; color: #64748b; border: 1px solid #334155; font-size: 13px; }
 
+    .btn-explain {
+      width: 100%; padding: 11px; margin-bottom: 14px;
+      background: #0f172a; color: #94a3b8;
+      border: 1px dashed #334155; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      text-align: center;
+    }
+    .btn-explain:hover { background: #1e293b; color: #cbd5e1; border-color: #475569; }
+
+    .explain-box {
+      background: #0f172a;
+      border: 1px solid #1e40af;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .explain-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #3b82f6; font-weight: 700; margin-bottom: 10px;
+    }
+    .explain-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .explain-item {
+      font-size: 13px; color: #cbd5e1; line-height: 1.6;
+      padding-left: 6px;
+    }
+
     .footer { margin-top: 20px; text-align: center; font-size: 11px; color: #334155; }
   </style>
 </head>
@@ -205,6 +232,13 @@
 
     <div class="reasons-title">Why this site was flagged</div>
     <ul class="reasons-list" id="reasons-list"></ul>
+
+    <button class="btn-explain" id="btn-explain">💬 Explain in simple language</button>
+
+    <div class="explain-box" id="explain-box" style="display:none">
+      <div class="explain-title">Simple Explanation</div>
+      <ul class="explain-list" id="explain-list"></ul>
+    </div>
 
     <div class="actions">
       <button class="btn btn-back"    id="btn-back">← Take Me to Safety</button>
