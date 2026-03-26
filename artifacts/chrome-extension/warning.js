@@ -21,8 +21,17 @@ items.forEach(function(r) {
 });
 
 document.getElementById("btn-back").addEventListener("click", function() {
-  if (history.length > 1) history.back();
-  else window.close();
+  // Use the tabs API to navigate safely — history.back() fails when the
+  // warning page was the very first navigation in this tab.
+  chrome.tabs.getCurrent(function(tab) {
+    if (tab) {
+      chrome.tabs.update(tab.id, { url: "https://www.google.com" });
+    } else if (history.length > 1) {
+      history.back();
+    } else {
+      window.close();
+    }
+  });
 });
 
 document.getElementById("btn-proceed").addEventListener("click", function() {
