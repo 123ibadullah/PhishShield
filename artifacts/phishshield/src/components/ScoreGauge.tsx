@@ -1,32 +1,30 @@
+// Semi-circular gauge showing the 0–100 risk score. The arc fills left-to-right
+// and changes colour based on whether the email is safe, suspicious, or phishing.
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface ScoreGaugeProps {
-  score: number; // 0-100
+  score: number; // 0–100
   classification: 'safe' | 'suspicious' | 'phishing';
 }
 
 export function ScoreGauge({ score, classification }: ScoreGaugeProps) {
-  // Config for circular gauge
   const radius = 60;
   const circumference = 2 * Math.PI * radius;
-  // We want a semi-circle (180 degrees)
-  const arcLength = circumference / 2;
-  const strokeDasharray = `${arcLength} ${circumference}`;
-  
-  // Progress computation
-  const progressLength = (score / 100) * arcLength;
-  const strokeDashoffset = arcLength - progressLength;
+  const arcLength = circumference / 2; // half-circle = 180°
 
-  // Colors based on classification
+  // How far the arc has progressed (0 = empty, arcLength = full)
+  const strokeDasharray = `${arcLength} ${circumference}`;
+  const strokeDashoffset = arcLength - (score / 100) * arcLength;
+
   const colors = {
-    safe: { stroke: 'stroke-safe', text: 'text-safe' },
-    suspicious: { stroke: 'stroke-warning', text: 'text-warning' },
-    phishing: { stroke: 'stroke-destructive', text: 'text-destructive' }
+    safe:       { stroke: 'stroke-safe',        text: 'text-safe' },
+    suspicious: { stroke: 'stroke-warning',      text: 'text-warning' },
+    phishing:   { stroke: 'stroke-destructive',  text: 'text-destructive' },
   };
 
-  const { stroke, text } = colors[classification] || colors.safe;
+  const { stroke, text } = colors[classification] ?? colors.safe;
 
   return (
     <div className="relative flex flex-col items-center justify-center pt-2">

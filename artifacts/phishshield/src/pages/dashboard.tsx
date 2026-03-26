@@ -367,9 +367,11 @@ export default function Dashboard() {
                     transition={{ duration: 0.4 }}
                     className="space-y-6"
                   >
-                    {/* 1. Verdict Card */}
-                    {(() => {
+                    {/* 1. Verdict card — the first thing users should see */}
+                    {(function VerdictCard() {
                       const c = classificationColor(result.classification);
+                      const langCode = LANG_CODES[result.detectedLanguage] ?? 'MX';
+                      const langLabel = LANG_LABELS[result.detectedLanguage] ?? result.detectedLanguage;
                       return (
                         <div className={cn("rounded-xl border shadow-sm overflow-hidden relative", c.bg, c.border)}>
                           <div className={cn("absolute left-0 top-0 bottom-0 w-1", c.bar)} />
@@ -381,10 +383,12 @@ export default function Dashboard() {
                               <p className="text-sm text-muted-foreground mt-1">
                                 Confidence: {(result.confidence * 100).toFixed(0)}%
                               </p>
-                              {/* Language badge */}
                               <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
                                 <Languages className="w-3.5 h-3.5" />
-                                <span><span className="font-mono text-[10px] bg-secondary px-1 py-0.5 rounded mr-1">{LANG_CODES[result.detectedLanguage] ?? 'MX'}</span>{LANG_LABELS[result.detectedLanguage] ?? result.detectedLanguage} detected</span>
+                                <span>
+                                  <span className="font-mono text-[10px] bg-secondary px-1 py-0.5 rounded mr-1">{langCode}</span>
+                                  {langLabel} detected
+                                </span>
                               </div>
                             </div>
                             <ScoreGauge score={result.riskScore} classification={result.classification} />
@@ -393,22 +397,19 @@ export default function Dashboard() {
                       );
                     })()}
 
-                    {/* 2. Score Breakdown */}
+                    {/* 2. Score breakdown — four sub-scores that add up to the final risk score */}
                     <div className="space-y-3 pt-2 pb-4 border-b border-border/50">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Score components</p>
                       <div className="flex flex-col sm:flex-row gap-4">
                         {[
-                          { label: 'ML Analysis', value: result.mlScore, color: 'bg-primary', desc: 'TF-IDF + LR' },
-                          { label: 'Pattern Matching', value: result.ruleScore, color: 'bg-accent', desc: 'Rule engine' },
-                          { label: 'Link Risk', value: result.urlScore, color: 'bg-warning', desc: 'URL analysis' },
-                          { label: 'Header Risk', value: result.headerScore, color: 'bg-destructive/70', desc: 'Spoofing detection' },
-                        ].map(({ label, value, color, desc }) => (
+                          { label: 'Language model', value: result.mlScore, color: 'bg-primary' },
+                          { label: 'Pattern matching', value: result.ruleScore, color: 'bg-accent' },
+                          { label: 'Link risk', value: result.urlScore, color: 'bg-warning' },
+                          { label: 'Header spoofing', value: result.headerScore, color: 'bg-destructive/70' },
+                        ].map(({ label, value, color }) => (
                           <div key={label} className="flex-1 space-y-2">
                             <div className="flex justify-between text-xs">
-                              <div>
-                                <span className="text-muted-foreground font-medium">{label}</span>
-                                <span className="text-muted-foreground/50 ml-1 text-[10px]">{desc}</span>
-                              </div>
+                              <span className="text-muted-foreground font-medium">{label}</span>
                               <span className="text-foreground font-mono">{value.toFixed(0)}</span>
                             </div>
                             <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
@@ -546,7 +547,7 @@ export default function Dashboard() {
                       </div>
                     )}
 
-                    {/* 4. Why We Flagged This */}
+                    {/* 4. Reason cards — plain-language explanation of each flag */}
                     {result.reasons.length > 0 && (
                       <div className="space-y-4 pt-4">
                         <h3 className="text-lg font-semibold text-foreground">What raised our concern</h3>
@@ -701,38 +702,39 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div className="flex flex-col sm:flex-row items-center gap-6">
-                      {/* Donut chart */}
+                      {/* Donut chart — colors hardcoded to match the safe/warning/destructive theme */}
                       <div className="w-full sm:w-64 h-52 shrink-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={[
-                                { name: 'Phishing', value: metrics?.phishingDetected ?? 0, fill: 'hsl(var(--destructive))' },
-                                { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, fill: 'hsl(var(--warning))' },
-                                { name: 'Safe', value: metrics?.safeDetected ?? 0, fill: 'hsl(var(--safe))' },
-                              ].filter(d => d.value > 0)}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={55}
-                              outerRadius={80}
-                              paddingAngle={3}
-                              dataKey="value"
-                            >
-                              {[
-                                { name: 'Phishing', value: metrics?.phishingDetected ?? 0, fill: 'hsl(var(--destructive))' },
-                                { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, fill: 'hsl(var(--warning))' },
-                                { name: 'Safe', value: metrics?.safeDetected ?? 0, fill: 'hsl(var(--safe))' },
-                              ].filter(d => d.value > 0).map((entry) => (
-                                <Cell key={entry.name} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                              itemStyle={{ color: 'hsl(var(--foreground))' }}
-                            />
-                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        {(() => {
+                          const pieData = [
+                            { name: 'Phishing',  value: metrics?.phishingDetected  ?? 0, fill: 'hsl(0, 72%, 58%)' },
+                            { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, fill: 'hsl(43, 96%, 56%)' },
+                            { name: 'Safe',       value: metrics?.safeDetected       ?? 0, fill: 'hsl(150, 60%, 45%)' },
+                          ].filter(d => d.value > 0);
+                          return (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={55}
+                                  outerRadius={80}
+                                  paddingAngle={3}
+                                  dataKey="value"
+                                >
+                                  {pieData.map(entry => (
+                                    <Cell key={entry.name} fill={entry.fill} />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                                  itemStyle={{ color: 'hsl(var(--foreground))' }}
+                                />
+                                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          );
+                        })()}
                       </div>
 
                       {/* Threat breakdown bars */}
@@ -763,11 +765,15 @@ export default function Dashboard() {
                         })}
 
                         <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
-                          <span className="text-warning font-medium">{
-                            (metrics?.totalScans ?? 0) > 0
-                              ? `${Math.round(((metrics?.phishingDetected ?? 0) + (metrics?.suspiciousDetected ?? 0)) / (metrics?.totalScans ?? 1) * 100)}% of scanned emails were flagged`
-                              : 'Scan emails to see statistics'
-                          }</span>
+                          {(metrics?.totalScans ?? 0) > 0 ? (
+                            <span className="text-warning font-medium">
+                              {Math.round(
+                                ((metrics!.phishingDetected + metrics!.suspiciousDetected) / metrics!.totalScans) * 100
+                              )}% of scanned emails were flagged
+                            </span>
+                          ) : (
+                            <span>Scan emails to see statistics</span>
+                          )}
                         </div>
                       </div>
                     </div>

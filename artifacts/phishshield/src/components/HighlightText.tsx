@@ -1,3 +1,5 @@
+// Renders email body text with suspicious words and URLs underlined in amber.
+// Hovering shows a tooltip explaining why the span was flagged.
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { type SuspiciousSpan } from '@workspace/api-client-react';
@@ -7,7 +9,7 @@ interface HighlightTextProps {
   spans: SuspiciousSpan[];
 }
 
-// Helper to parse URLs in text
+// Renders plain text but makes any http(s) URLs visually distinct
 function TextWithUrls({ text }: { text: string }) {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
