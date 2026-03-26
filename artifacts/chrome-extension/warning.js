@@ -1,18 +1,42 @@
-const params  = new URLSearchParams(location.search);
-const url     = params.get("url")   || "";
-const score   = parseInt(params.get("score") || "0", 10);
-const reasons = JSON.parse(params.get("reasons") || "[]");
-const india   = params.get("india") === "1";
-const dest    = params.get("dest")  || "";
+var params  = new URLSearchParams(location.search);
+var url     = params.get("url")    || "";
+var score   = parseInt(params.get("score") || "0", 10);
+var level   = params.get("level")  || "phishing";
+var reasons = JSON.parse(params.get("reasons") || "[]");
+var india   = params.get("india")  === "1";
+var dest    = params.get("dest")   || "";
 
+var isSuspicious = level === "suspicious";
+
+// Apply amber theme for suspicious, red stays default
+if (isSuspicious) document.body.classList.add("suspicious");
+
+// Title / subtitle
+document.getElementById("page-title").textContent =
+  isSuspicious ? "Suspicious Site Warning" : "Phishing Site Blocked";
+document.getElementById("page-subtitle").textContent =
+  isSuspicious
+    ? "PhishShield Guardian flagged this page — proceed with caution"
+    : "PhishShield Guardian stopped this page from loading";
+document.getElementById("shield-icon").textContent = isSuspicious ? "⚠️" : "🛡";
+
+// Score
 document.getElementById("score-circle").textContent = score;
 document.getElementById("score-label").textContent  = "Risk Score: " + score + "/100";
-document.getElementById("url-text").textContent     = url;
+document.getElementById("score-desc").textContent   =
+  isSuspicious
+    ? "This site shows signs of suspicious activity"
+    : "This site has been identified as a phishing threat";
 
+// URL
+document.getElementById("url-text").textContent = url;
+
+// Indian banking alert
 if (india) document.getElementById("india-alert").style.display = "block";
 
-const list = document.getElementById("reasons-list");
-const items = reasons.length ? reasons : ["This site matched multiple phishing indicators."];
+// Reasons
+var list  = document.getElementById("reasons-list");
+var items = reasons.length ? reasons : ["This site matched multiple suspicious indicators."];
 items.forEach(function(r) {
   var li = document.createElement("li");
   li.className   = "reason-item";
@@ -20,9 +44,8 @@ items.forEach(function(r) {
   list.appendChild(li);
 });
 
+// Buttons
 document.getElementById("btn-back").addEventListener("click", function() {
-  // Use the tabs API to navigate safely — history.back() fails when the
-  // warning page was the very first navigation in this tab.
   chrome.tabs.getCurrent(function(tab) {
     if (tab) {
       chrome.tabs.update(tab.id, { url: "https://www.google.com" });

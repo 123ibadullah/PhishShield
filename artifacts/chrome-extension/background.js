@@ -197,11 +197,12 @@ function updateBadge(tabId, result) {
 
 function getWarningUrl(result, originalUrl) {
   const params = new URLSearchParams({
-    url:     originalUrl,
-    score:   result.riskScore,
+    url:    originalUrl,
+    score:  result.riskScore,
+    level:  result.classification,
     reasons: JSON.stringify(result.reasons || []),
-    india:   result.isIndianBankingRelated ? "1" : "0",
-    dest:    originalUrl,
+    india:  result.isIndianBankingRelated ? "1" : "0",
+    dest:   originalUrl,
   });
   return chrome.runtime.getURL("warning.html") + "?" + params.toString();
 }
@@ -224,7 +225,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     tabResults.set(tabId, result);
     updateBadge(tabId, result);
 
-    if (result.classification === "phishing") {
+    if (result.classification === "phishing" || result.classification === "suspicious") {
       // If user already approved this URL (clicked "proceed anyway"), let it load
       if (allowedUrls.has(url)) {
         allowedUrls.delete(url); // allow once only

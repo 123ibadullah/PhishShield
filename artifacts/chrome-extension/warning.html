@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PhishShield Guardian — Phishing Warning</title>
+  <title>PhishShield Guardian — Warning</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -17,20 +17,38 @@
       padding: 24px;
     }
 
+    /* ── Colour tokens set by JS (default = phishing red) ── */
+    :root {
+      --accent:      #dc2626;
+      --accent-text: #f87171;
+      --accent-bg:   rgba(220,38,38,0.08);
+      --accent-bdr:  rgba(220,38,38,0.2);
+      --glow:        rgba(220,38,38,0.2);
+      --glow-mid:    rgba(220,38,38,0.4);
+    }
+
+    body.suspicious {
+      --accent:      #f59e0b;
+      --accent-text: #fbbf24;
+      --accent-bg:   rgba(245,158,11,0.08);
+      --accent-bdr:  rgba(245,158,11,0.2);
+      --glow:        rgba(245,158,11,0.15);
+      --glow-mid:    rgba(245,158,11,0.35);
+    }
+
     .card {
       background: #1e293b;
-      border: 1px solid #dc2626;
+      border: 1px solid var(--accent);
       border-radius: 20px;
       max-width: 640px;
       width: 100%;
       padding: 40px;
-      box-shadow: 0 0 60px rgba(220,38,38,0.2);
       animation: pulse-border 2s ease-in-out infinite;
     }
 
     @keyframes pulse-border {
-      0%, 100% { box-shadow: 0 0 40px rgba(220,38,38,0.2); }
-      50%       { box-shadow: 0 0 80px rgba(220,38,38,0.4); }
+      0%, 100% { box-shadow: 0 0 40px var(--glow); }
+      50%       { box-shadow: 0 0 80px var(--glow-mid); }
     }
 
     .top {
@@ -42,32 +60,23 @@
 
     .shield-icon {
       width: 56px; height: 56px;
-      background: rgba(220,38,38,0.15);
-      border: 2px solid rgba(220,38,38,0.4);
+      background: var(--accent-bg);
+      border: 2px solid var(--accent-bdr);
       border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
       font-size: 28px;
       flex-shrink: 0;
     }
 
-    .top-text h1 {
-      font-size: 22px;
-      font-weight: 800;
-      color: #f87171;
-    }
-
-    .top-text p {
-      font-size: 13px;
-      color: #64748b;
-      margin-top: 3px;
-    }
+    .top-text h1 { font-size: 22px; font-weight: 800; color: var(--accent-text); }
+    .top-text p  { font-size: 13px; color: #64748b; margin-top: 3px; }
 
     .score-row {
       display: flex;
       align-items: center;
       gap: 16px;
-      background: rgba(220,38,38,0.08);
-      border: 1px solid rgba(220,38,38,0.2);
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-bdr);
       border-radius: 12px;
       padding: 16px 20px;
       margin-bottom: 20px;
@@ -76,25 +85,15 @@
     .score-circle {
       width: 64px; height: 64px;
       border-radius: 50%;
-      border: 4px solid #dc2626;
+      border: 4px solid var(--accent);
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      font-weight: 900;
-      color: #f87171;
+      font-size: 22px; font-weight: 900;
+      color: var(--accent-text);
       flex-shrink: 0;
     }
 
-    .score-info h2 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #f87171;
-    }
-
-    .score-info p {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-top: 3px;
-    }
+    .score-info h2 { font-size: 18px; font-weight: 700; color: var(--accent-text); }
+    .score-info p  { font-size: 13px; color: #94a3b8; margin-top: 3px; }
 
     .url-box {
       background: #0f172a;
@@ -112,7 +111,7 @@
     .url-text {
       font-family: monospace;
       font-size: 13px;
-      color: #f87171;
+      color: var(--accent-text);
       word-break: break-all;
       line-height: 1.5;
     }
@@ -127,7 +126,6 @@
       color: #fbbf24;
       line-height: 1.6;
     }
-
     .india-alert strong { color: #fde68a; }
 
     .reasons-title {
@@ -154,18 +152,9 @@
       color: #94a3b8;
       line-height: 1.5;
     }
+    .reason-item::before { content: "›"; color: var(--accent-text); font-weight: 800; flex-shrink: 0; }
 
-    .reason-item::before {
-      content: "›";
-      color: #f87171;
-      font-weight: 800;
-      flex-shrink: 0;
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-    }
+    .actions { display: flex; gap: 12px; }
 
     .btn {
       flex: 1;
@@ -177,37 +166,22 @@
       border: none;
       transition: opacity 0.15s, transform 0.1s;
     }
-
-    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn:hover  { opacity: 0.9; transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
 
-    .btn-back {
-      background: #22c55e;
-      color: #fff;
-    }
+    .btn-back    { background: #22c55e; color: #fff; }
+    .btn-proceed { background: #1e293b; color: #64748b; border: 1px solid #334155; font-size: 13px; }
 
-    .btn-proceed {
-      background: #1e293b;
-      color: #64748b;
-      border: 1px solid #334155;
-      font-size: 13px;
-    }
-
-    .footer {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 11px;
-      color: #334155;
-    }
+    .footer { margin-top: 20px; text-align: center; font-size: 11px; color: #334155; }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="top">
-      <div class="shield-icon">🛡</div>
+      <div class="shield-icon" id="shield-icon">🛡</div>
       <div class="top-text">
-        <h1>Phishing Site Blocked</h1>
-        <p>PhishShield Guardian stopped this page from loading</p>
+        <h1 id="page-title">Phishing Site Blocked</h1>
+        <p id="page-subtitle">PhishShield Guardian stopped this page from loading</p>
       </div>
     </div>
 
@@ -215,7 +189,7 @@
       <div class="score-circle" id="score-circle">—</div>
       <div class="score-info">
         <h2 id="score-label">Risk Score: —/100</h2>
-        <p>This site has been identified as a phishing threat</p>
+        <p id="score-desc">This site has been identified as a phishing threat</p>
       </div>
     </div>
 
@@ -229,11 +203,11 @@
       Real banks will <strong>never</strong> ask for your OTP, UPI PIN, or Aadhaar details through a link.
     </div>
 
-    <div class="reasons-title">Why this site was blocked</div>
+    <div class="reasons-title">Why this site was flagged</div>
     <ul class="reasons-list" id="reasons-list"></ul>
 
     <div class="actions">
-      <button class="btn btn-back" id="btn-back">← Take Me to Safety</button>
+      <button class="btn btn-back"    id="btn-back">← Take Me to Safety</button>
       <button class="btn btn-proceed" id="btn-proceed">I understand the risk, proceed anyway</button>
     </div>
 
