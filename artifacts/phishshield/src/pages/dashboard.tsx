@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, ShieldAlert, AlertTriangle,
@@ -149,6 +149,10 @@ export default function Dashboard() {
   const [emailText, setEmailText] = useState('');
   const [showDemos, setShowDemos] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('analyze');
+  const [isDemoEmail, setIsDemoEmail] = useState(false);
+
+  // Used to smooth-scroll down to results after a scan completes
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const [localHistory, setLocalHistory] = useState<Array<{
     id: string; timestamp: string; emailPreview: string; riskScore: number;
@@ -173,8 +177,15 @@ export default function Dashboard() {
   // Pre-compute verdict colors so we don't need an IIFE inside JSX
   const verdictColors = result ? classificationColor(result.classification) : null;
 
+  const scrollToResults = () => {
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+  };
+
   const handleScan = () => {
     if (!emailText.trim()) return;
+    setIsDemoEmail(false);
     analyzeEmail({ data: { emailText } }, {
       onSuccess: (data) => {
         const newItem = {
@@ -194,14 +205,39 @@ export default function Dashboard() {
         });
         refetchHistory();
         refetchMetrics();
+        scrollToResults();
       }
     });
   };
 
+  // Selecting a demo email auto-scans immediately — no button click needed
   const loadDemo = (text: string) => {
     setEmailText(text);
     setShowDemos(false);
+    setIsDemoEmail(true);
     reset();
+    analyzeEmail({ data: { emailText: text } }, {
+      onSuccess: (data) => {
+        const newItem = {
+          id: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          emailPreview: text.slice(0, 80),
+          riskScore: data.riskScore,
+          classification: data.classification,
+          detectedLanguage: data.detectedLanguage,
+          urlCount: data.urlAnalyses.length,
+          reasonCount: data.reasons.length,
+        };
+        setLocalHistory(prev => {
+          const updated = [newItem, ...prev].slice(0, 20);
+          try { localStorage.setItem('phishshield_history', JSON.stringify(updated)); } catch { /* ignore */ }
+          return updated;
+        });
+        refetchHistory();
+        refetchMetrics();
+        scrollToResults();
+      }
+    });
   };
 
   const handleClearHistory = () => {
@@ -316,6 +352,9 @@ export default function Dashboard() {
                           exit={{ opacity: 0, y: 5 }}
                           className="absolute right-0 mt-2 w-60 bg-popover border border-popover-border rounded-xl shadow-lg z-50 overflow-hidden"
                         >
+                          <div className="px-3 py-2 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider border-b border-border/50">
+                            Try real phishing examples (Demo)
+                          </div>
                           <div className="p-1.5">
                             {PRELOADED_EMAILS.map(demo => (
                               <button
@@ -339,6 +378,7 @@ export default function Dashboard() {
                   onChange={(e) => {
                     setEmailText(e.target.value);
                     if (result) reset();
+                    if (isDemoEmail) setIsDemoEmail(false);
                   }}
                   placeholder="Paste suspicious email content here..."
                   className={cn(
@@ -403,6 +443,7 @@ export default function Dashboard() {
               <AnimatePresence mode="wait">
                 {result && (
                   <motion.div
+                    ref={resultsRef}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
@@ -430,6 +471,11 @@ export default function Dashboard() {
                                 {LANG_LABELS[result.detectedLanguage] ?? result.detectedLanguage} detected
                               </span>
                             </div>
+                            {isDemoEmail && (
+                              <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border/60">
+                                Demo Email (Simulated)
+                              </span>
+                            )}
                           </div>
                           <ScoreGauge score={result.riskScore} classification={result.classification} />
                         </div>
