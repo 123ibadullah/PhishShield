@@ -317,9 +317,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       };
     }
 
-    // Combine URL score + content score (content capped at 50, total capped at 100)
-    const combined     = Math.min((base.riskScore || 0) + Math.min(contentScore, 50), 100);
-    const newClass     = combined >= 71 ? "phishing" : combined >= 31 ? "suspicious" : "safe";
+    const { forcePhishing = false } = message;
+
+    // Combine URL score + content score (content capped at 60)
+    let combined  = Math.min((base.riskScore || 0) + Math.min(contentScore, 60), 100);
+    let newClass  = combined >= 71 ? "phishing" : combined >= 31 ? "suspicious" : "safe";
+
+    // Rule 1: contentScore > 40 alone → always phishing
+    if (contentScore > 40) newClass = "phishing";
+
+    // Rule 2: strong keywords + sensitive inputs → force score >= 75 and phishing
+    if (forcePhishing) {
+      combined  = Math.max(combined, 75);
+      newClass  = "phishing";
+    }
 
     const updated = {
       ...base,
