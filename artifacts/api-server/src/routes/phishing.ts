@@ -5,18 +5,20 @@ import { addToHistory } from "../lib/historyStore.js";
 
 const router: IRouter = Router();
 
+const MAX_EMAIL_LENGTH = 50_000;
+
 router.post("/analyze", (req, res) => {
   try {
     const parsed = AnalyzeEmailBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({
         error: "validation_error",
-        message: "Invalid request body. Please provide emailText.",
+        message: "Invalid request body. Please provide emailText as a string.",
       });
       return;
     }
 
-    const { emailText } = parsed.data;
+    let { emailText } = parsed.data;
 
     if (!emailText || emailText.trim().length === 0) {
       res.status(400).json({
@@ -26,12 +28,9 @@ router.post("/analyze", (req, res) => {
       return;
     }
 
-    if (emailText.length > 50000) {
-      res.status(400).json({
-        error: "input_too_long",
-        message: "Email text is too long. Maximum 50,000 characters.",
-      });
-      return;
+    // Trim silently rather than rejecting — very long emails are rare but shouldn't crash the server
+    if (emailText.length > MAX_EMAIL_LENGTH) {
+      emailText = emailText.slice(0, MAX_EMAIL_LENGTH);
     }
 
     const result = analyzeEmail(emailText);

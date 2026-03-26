@@ -1,15 +1,11 @@
-/**
- * TF-IDF + Logistic Regression phishing classifier.
- *
- * Vocabulary and weights were derived from training on 11,243 labelled emails
- * (6,817 phishing / 4,426 legitimate) using sklearn's TfidfVectorizer +
- * LogisticRegression(C=1.0, max_iter=1000). The top-120 features by absolute
- * weight are encoded here; all others are treated as zero.
- *
- * IDF values reflect log(N/df) from that corpus.
- * LR weights: positive → phishing signal, negative → safe signal.
- * Bias term calibrated so an empty document scores ~7 (sigmoid(-2.5) ≈ 0.076).
- */
+// TF-IDF + Logistic Regression phishing classifier.
+//
+// Vocabulary and weights come from training on ~11k labelled emails using
+// sklearn's TfidfVectorizer + LogisticRegression(C=1.0). The top 120 features
+// by absolute weight are hardcoded below; everything else scores zero.
+//
+// Positive weights → phishing signal. Negative weights → safe signal.
+// The bias (-2.5) means an empty document scores about 7/100.
 
 type VocabEntry = { term: string; idf: number; weight: number };
 
@@ -154,7 +150,8 @@ function sigmoid(x: number): number {
   return 1 / (1 + Math.exp(-x));
 }
 
-function countTermInDoc(term: string, lowerText: string): number {
+// Count how many times a term appears in the (lowercased) document
+function countOccurrences(term: string, lowerText: string): number {
   let count = 0;
   let pos = 0;
   while ((pos = lowerText.indexOf(term, pos)) !== -1) {
@@ -164,13 +161,8 @@ function countTermInDoc(term: string, lowerText: string): number {
   return count;
 }
 
-/**
- * Compute TF-IDF score + logistic regression for the given email text.
- *
- * Returns:
- *   score       — ML risk score 0–100
- *   topFeatures — up to 8 features with their signed contribution
- */
+// Run TF-IDF scoring and logistic regression for the given email text.
+// Returns a 0–100 risk score and the top features that drove it.
 export function tfidfLRScore(text: string): {
   score: number;
   topFeatures: FeatureContribution[];
@@ -179,19 +171,19 @@ export function tfidfLRScore(text: string): {
     return { score: 0, topFeatures: [] };
   }
 
-  const lowerText = text.toLowerCase();
+  const lower = text.toLowerCase();
   const wordCount = Math.max(text.split(/\s+/).length, 1);
 
   const contributions: { entry: VocabEntry; value: number }[] = [];
 
   for (const entry of VOCABULARY) {
-    const count = countTermInDoc(entry.term, lowerText);
+    const count = countOccurrences(entry.term, lower);
     if (count === 0) continue;
 
-    // TF: log-normalised to dampen term repetition
+    // Log-normalised TF dampens the effect of repeated terms
     const tf = (1 + Math.log(count)) / (1 + Math.log(wordCount));
-    const tfidfVal = tf * entry.idf;
-    const contribution = tfidfVal * entry.weight;
+    const tfidf = tf * entry.idf;
+    const contribution = tfidf * entry.weight;
     contributions.push({ entry, value: contribution });
   }
 
@@ -199,7 +191,7 @@ export function tfidfLRScore(text: string): {
   const probability = sigmoid(rawSum + BIAS);
   const score = Math.round(probability * 100);
 
-  // Top contributing features (absolute value descending)
+  // Pick the 8 features with the largest absolute contribution for the chart
   const topFeatures: FeatureContribution[] = contributions
     .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
     .slice(0, 8)

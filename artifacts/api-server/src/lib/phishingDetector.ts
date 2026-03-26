@@ -1,22 +1,22 @@
 import { AnalyzeEmailResponse } from "@workspace/api-zod";
 import type { AnalyzeResult, UrlAnalysis, DetectionReason, SuspiciousSpan } from "@workspace/api-zod";
-import { tfidfLRScore, FeatureContribution } from "./tfidfModel";
-import { analyzeEmailHeaders, HeaderAnalysis } from "./emailHeaderParser";
+import { tfidfLRScore, type FeatureContribution } from "./tfidfModel";
+import { analyzeEmailHeaders, type HeaderAnalysis } from "./emailHeaderParser";
 
-type UrlAnalysisType = UrlAnalysis;
-type DetectionReasonType = DetectionReason;
-type SuspiciousSpanType = SuspiciousSpan;
-
+// ─── Language detection ───────────────────────────────────────────────────────
+// We check for Devanagari (Hindi) and Telugu Unicode ranges.
+// If both appear in the same email it's a mixed-language message.
 function detectLanguage(text: string): string {
-  const devanagariRange = /[\u0900-\u097F]/;
-  const teluguRange = /[\u0C00-\u0C7F]/;
-  const hasHindi = devanagariRange.test(text);
-  const hasTelugu = teluguRange.test(text);
+  const hasHindi = /[\u0900-\u097F]/.test(text);
+  const hasTelugu = /[\u0C00-\u0C7F]/.test(text);
   if (hasHindi && hasTelugu) return "mixed";
   if (hasHindi) return "hi";
   if (hasTelugu) return "te";
   return "en";
 }
+
+// ─── Keyword lists ────────────────────────────────────────────────────────────
+// These feed both the rule-based scorer and the highlighted span finder.
 
 const URGENCY_WORDS = [
   "urgent", "urgently", "immediately", "expire", "expires", "expiring", "expired",
@@ -25,6 +25,7 @@ const URGENCY_WORDS = [
   "24 hours", "48 hours", "hours left", "deadline", "final notice", "last chance",
   "confirm now", "update now", "validate", "reactivate", "restore access",
   "account locked", "account blocked", "account suspended", "password expired",
+  // Hindi urgency words
   "तुरंत", "तत्काल", "जल्दी", "अभी", "बंद", "निलंबित",
 ];
 
@@ -36,6 +37,7 @@ const FINANCIAL_SCAM_WORDS = [
   "refund pending", "kyc", "know your customer", "pan card", "aadhaar",
   "bank account", "credit card", "debit card", "otp", "one time password",
   "transaction failed", "payment pending", "transfer",
+  // Hindi financial words
   "इनाम", "जीत", "पैसे", "बधाई", "रुपये",
 ];
 
@@ -50,6 +52,7 @@ const SOCIAL_ENGINEERING_WORDS = [
   "failure to comply", "legal action", "court action", "police complaint",
 ];
 
+// Indian banks and payment services — used for impersonation detection
 const INDIA_SPECIFIC_BANKS = [
   "sbi", "state bank", "hdfc", "icici", "axis bank", "punjab national",
   "pnb", "bank of baroda", "bob", "canara bank", "union bank",
@@ -65,6 +68,7 @@ const INDIA_SPECIFIC_SERVICES = [
   "gst", "eway bill", "itr", "form 16",
 ];
 
+// TLDs that are free/abused and show up constantly in phishing campaigns
 const SUSPICIOUS_TLDS = [
   ".xyz", ".tk", ".ml", ".ga", ".cf", ".gq", ".pw",
   ".top", ".club", ".online", ".site", ".icu", ".work",
@@ -77,6 +81,7 @@ const URL_SHORTENERS = [
   "clk.sh", "is.gd", "v.gd",
 ];
 
+// Regex patterns for lookalike domains (e.g. "sbi-secure-login.xyz")
 const LOOKALIKE_PATTERNS: [RegExp, string][] = [
   [/paypa[l1]|payp4l/i, "PayPal lookalike domain"],
   [/g00gle|g0ogle|gooogle/i, "Google lookalike domain"],
@@ -96,6 +101,8 @@ const LOOKALIKE_PATTERNS: [RegExp, string][] = [
   [/[a-z]+-claim\./i, "Fake 'claim' domain pattern"],
 ];
 
+// ─── URL helpers ──────────────────────────────────────────────────────────────
+
 function extractUrls(text: string): string[] {
   const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+|www\.[^\s<>"{}|\\^`\[\]]+/gi;
   return text.match(urlRegex) || [];
@@ -103,16 +110,17 @@ function extractUrls(text: string): string[] {
 
 function extractDomain(url: string): string {
   try {
-    const u = url.startsWith("www.") ? "http://" + url : url;
-    const parsed = new URL(u);
+    const normalized = url.startsWith("www.") ? "http://" + url : url;
+    const parsed = new URL(normalized);
     return parsed.hostname.toLowerCase().replace(/^www\./, "");
   } catch {
+    // If URL parsing fails, pull the hostname out manually
     const match = url.match(/(?:https?:\/\/)?(?:www\.)?([^/\s?#]+)/i);
     return match ? match[1].toLowerCase() : url;
   }
 }
 
-function analyzeUrl(url: string): UrlAnalysisType {
+function analyzeUrl(url: string): UrlAnalysis {
   const domain = extractDomain(url);
   const flags: string[] = [];
   let score = 0;
@@ -123,11 +131,12 @@ function analyzeUrl(url: string): UrlAnalysisType {
     score += 30;
   }
 
-  if (URL_SHORTENERS.some((s) => domain.includes(s))) {
+  if (URL_SHORTENERS.some(s => domain.includes(s))) {
     flags.push("URL shortener detected");
     score += 25;
   }
 
+  // Lookalike domains — check each pattern and stop at first match
   for (const [pattern, label] of LOOKALIKE_PATTERNS) {
     if (pattern.test(domain)) {
       flags.push(label);
@@ -136,8 +145,7 @@ function analyzeUrl(url: string): UrlAnalysisType {
     }
   }
 
-  const domainParts = domain.split(".");
-  if (domainParts.length > 3) {
+  if (domain.split(".").length > 3) {
     flags.push("Suspicious subdomain structure");
     score += 15;
   }
@@ -162,19 +170,21 @@ function analyzeUrl(url: string): UrlAnalysisType {
     score += 15;
   }
 
-  score = Math.min(score, 100);
-
   return {
     url,
     domain,
-    riskScore: score,
+    riskScore: Math.min(score, 100),
     flags,
     isSuspicious: score >= 30,
   };
 }
 
-function findSuspiciousSpans(text: string, matchedTerms: string[]): SuspiciousSpanType[] {
-  const spans: SuspiciousSpanType[] = [];
+// ─── Suspicious span finder ───────────────────────────────────────────────────
+// Finds character positions of matched keywords and URLs so the frontend
+// can highlight them in the original email text.
+
+function findSuspiciousSpans(text: string, matchedTerms: string[]): SuspiciousSpan[] {
+  const spans: SuspiciousSpan[] = [];
   const lowerText = text.toLowerCase();
 
   for (const term of matchedTerms) {
@@ -193,21 +203,17 @@ function findSuspiciousSpans(text: string, matchedTerms: string[]): SuspiciousSp
     }
   }
 
-  const urls = extractUrls(text);
-  for (const url of urls) {
+  // Also mark every URL found in the email
+  for (const url of extractUrls(text)) {
     const pos = text.indexOf(url);
     if (pos !== -1) {
-      spans.push({
-        start: pos,
-        end: pos + url.length,
-        text: url,
-        reason: "URL detected",
-      });
+      spans.push({ start: pos, end: pos + url.length, text: url, reason: "URL detected" });
     }
   }
 
+  // Sort and merge overlapping spans so we don't get double-highlights
   spans.sort((a, b) => a.start - b.start);
-  const merged: SuspiciousSpanType[] = [];
+  const merged: SuspiciousSpan[] = [];
   for (const span of spans) {
     if (merged.length === 0 || span.start > merged[merged.length - 1].end) {
       merged.push(span);
@@ -224,129 +230,105 @@ function findSuspiciousSpans(text: string, matchedTerms: string[]): SuspiciousSp
   return merged;
 }
 
-function computeMLScore(text: string): number {
-  const lowerText = text.toLowerCase();
-  let score = 0;
-  const wordCount = text.split(/\s+/).length;
+// ─── Rule-based scorer ────────────────────────────────────────────────────────
+// Pattern matching against known phishing indicators.
+// Returns a score (0–100), the human-readable reasons, and all matched terms.
 
-  let urgencyHits = 0;
-  for (const w of URGENCY_WORDS) {
-    if (lowerText.includes(w)) urgencyHits++;
-  }
+function computeRuleScore(text: string): {
+  score: number;
+  reasons: DetectionReason[];
+  allTerms: string[];
+} {
+  const lower = text.toLowerCase();
+  const reasons: DetectionReason[] = [];
+  const allTerms: string[] = [];
+  let total = 0;
 
-  let financialHits = 0;
-  for (const w of FINANCIAL_SCAM_WORDS) {
-    if (lowerText.includes(w)) financialHits++;
-  }
-
-  let socialHits = 0;
-  for (const w of SOCIAL_ENGINEERING_WORDS) {
-    if (lowerText.includes(w)) socialHits++;
-  }
-
-  const urgencyRatio = urgencyHits / URGENCY_WORDS.length;
-  const financialRatio = financialHits / FINANCIAL_SCAM_WORDS.length;
-  const socialRatio = socialHits / SOCIAL_ENGINEERING_WORDS.length;
-
-  score = urgencyRatio * 0.35 + financialRatio * 0.40 + socialRatio * 0.25;
-
-  if (wordCount < 20 && (urgencyHits > 0 || financialHits > 0)) {
-    score = Math.min(score * 1.3, 1.0);
-  }
-
-  const exclamationCount = (text.match(/!/g) || []).length;
-  if (exclamationCount > 2) score = Math.min(score + 0.05 * exclamationCount, 1.0);
-
-  const capsRatio = (text.match(/[A-Z]/g) || []).length / Math.max(text.length, 1);
-  if (capsRatio > 0.3) score = Math.min(score + 0.1, 1.0);
-
-  return Math.round(score * 100);
-}
-
-function computeRuleScore(text: string): { score: number; reasons: DetectionReasonType[]; allTerms: string[] } {
-  const lowerText = text.toLowerCase();
-  const reasons: DetectionReasonType[] = [];
-  const allMatchedTerms: string[] = [];
-  let totalScore = 0;
-
-  const urgencyMatched = URGENCY_WORDS.filter((w) => lowerText.includes(w));
-  if (urgencyMatched.length > 0) {
-    allMatchedTerms.push(...urgencyMatched);
-    const sev = urgencyMatched.length >= 3 ? "high" : urgencyMatched.length >= 2 ? "medium" : "low";
+  const urgencyHits = URGENCY_WORDS.filter(w => lower.includes(w));
+  if (urgencyHits.length > 0) {
+    allTerms.push(...urgencyHits);
+    const sev = urgencyHits.length >= 3 ? "high" : urgencyHits.length >= 2 ? "medium" : "low";
     reasons.push({
       category: "urgency",
       description: `This email is trying to rush you into action. Words like "urgent", "blocked", or "verify now" are a common tactic used to prevent you from pausing to check whether the message is genuine.`,
       severity: sev,
-      matchedTerms: urgencyMatched.slice(0, 6),
+      matchedTerms: urgencyHits.slice(0, 6),
     });
-    totalScore += Math.min(15 + (urgencyMatched.length - 1) * 10, 45);
+    total += Math.min(15 + (urgencyHits.length - 1) * 10, 45);
   }
 
-  const financialMatched = FINANCIAL_SCAM_WORDS.filter((w) => lowerText.includes(w));
-  if (financialMatched.length > 0) {
-    allMatchedTerms.push(...financialMatched);
-    const sev = financialMatched.length >= 4 ? "high" : financialMatched.length >= 2 ? "medium" : "low";
+  const financialHits = FINANCIAL_SCAM_WORDS.filter(w => lower.includes(w));
+  if (financialHits.length > 0) {
+    allTerms.push(...financialHits);
+    const sev = financialHits.length >= 4 ? "high" : financialHits.length >= 2 ? "medium" : "low";
     reasons.push({
       category: "financial",
       description: `The email references money, bank accounts, or digital payments. Scammers use financial language to grab your attention and exploit concerns about your account or wallet.`,
       severity: sev,
-      matchedTerms: financialMatched.slice(0, 6),
+      matchedTerms: financialHits.slice(0, 6),
     });
-    totalScore += Math.min(15 + (financialMatched.length - 1) * 8, 35);
+    total += Math.min(15 + (financialHits.length - 1) * 8, 35);
   }
 
-  const socialMatched = SOCIAL_ENGINEERING_WORDS.filter((w) => lowerText.includes(w));
-  if (socialMatched.length > 0) {
-    allMatchedTerms.push(...socialMatched);
-    const sev = socialMatched.length >= 3 ? "high" : "medium";
+  const socialHits = SOCIAL_ENGINEERING_WORDS.filter(w => lower.includes(w));
+  if (socialHits.length > 0) {
+    allTerms.push(...socialHits);
     reasons.push({
       category: "social_engineering",
       description: `This email is written to sound like it comes from someone you should trust. Phrases like "Dear Customer" and "click here" are used to make the message feel personal and authoritative.`,
-      severity: sev,
-      matchedTerms: socialMatched.slice(0, 6),
+      severity: socialHits.length >= 3 ? "high" : "medium",
+      matchedTerms: socialHits.slice(0, 6),
     });
-    totalScore += Math.min(10 + (socialMatched.length - 1) * 7, 30);
+    total += Math.min(10 + (socialHits.length - 1) * 7, 30);
   }
 
-  const bankMatched = INDIA_SPECIFIC_BANKS.filter((b) => lowerText.includes(b));
-  const serviceMatched = INDIA_SPECIFIC_SERVICES.filter((s) => lowerText.includes(s));
-  if (bankMatched.length > 0 || serviceMatched.length > 0) {
-    const terms = [...bankMatched, ...serviceMatched];
-    allMatchedTerms.push(...terms);
-    if (totalScore > 8) {
+  const bankHits = INDIA_SPECIFIC_BANKS.filter(b => lower.includes(b));
+  const serviceHits = INDIA_SPECIFIC_SERVICES.filter(s => lower.includes(s));
+  if (bankHits.length > 0 || serviceHits.length > 0) {
+    const terms = [...bankHits, ...serviceHits];
+    allTerms.push(...terms);
+    // Only flag brand impersonation if there are other risk signals too
+    if (total > 8) {
       reasons.push({
         category: "india_specific",
         description: `The sender appears to be impersonating a well-known Indian bank or payment platform. Scammers frequently clone real brands to appear legitimate — your actual bank will never ask for credentials over email.`,
         severity: "high",
         matchedTerms: terms.slice(0, 6),
       });
-      totalScore += 25;
+      total += 25;
     }
   }
 
-  const hindiUrduPatterns = ["तुरंत", "जल्दी", "अभी", "बंद", "इनाम", "बधाई", "रुपये", "पैसे", "खाता", "सत्यापन"];
-  const hindiMatched = hindiUrduPatterns.filter((w) => text.includes(w));
-  if (hindiMatched.length > 0) {
-    allMatchedTerms.push(...hindiMatched);
+  const hindiScamWords = ["तुरंत", "जल्दी", "अभी", "बंद", "इनाम", "बधाई", "रुपये", "पैसे", "खाता", "सत्यापन"];
+  const hindiHits = hindiScamWords.filter(w => text.includes(w));
+  if (hindiHits.length > 0) {
+    allTerms.push(...hindiHits);
     reasons.push({
       category: "language",
       description: `This message contains Hindi words that commonly appear in regionally targeted phishing. Scammers use local language to make the email feel more familiar and trustworthy to Indian readers.`,
       severity: "medium",
-      matchedTerms: hindiMatched,
+      matchedTerms: hindiHits,
     });
-    totalScore += hindiMatched.length * 8;
+    total += hindiHits.length * 8;
   }
 
-  return { score: Math.min(totalScore, 100), reasons, allTerms: [...new Set(allMatchedTerms)] };
+  return {
+    score: Math.min(total, 100),
+    reasons,
+    allTerms: [...new Set(allTerms)],
+  };
 }
 
+// ─── Main export ──────────────────────────────────────────────────────────────
+
 export function analyzeEmail(emailText: string): AnalyzeResult {
+  // Empty input — return a neutral safe result
   if (!emailText || emailText.trim().length === 0) {
     return {
       riskScore: 0,
       classification: "safe",
       confidence: 1.0,
-      detectedLanguage: "english",
+      detectedLanguage: "en",
       reasons: [],
       suspiciousSpans: [],
       urlAnalyses: [],
@@ -360,38 +342,40 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     };
   }
 
+  // Run all three subsystems in parallel (synchronously)
   const { score: mlScore, topFeatures } = tfidfLRScore(emailText);
-  const headerAnalysis = analyzeEmailHeaders(emailText);
-  const { score: ruleScore, reasons: ruleReasons, allTerms } = computeRuleScore(emailText);
+  const headerAnalysis: HeaderAnalysis = analyzeEmailHeaders(emailText);
+  const { score: ruleScore, reasons, allTerms } = computeRuleScore(emailText);
 
+  // URL analysis — score is weighted max+avg to avoid one bad link dominating
   const urls = extractUrls(emailText);
   const urlAnalyses = urls.map(analyzeUrl);
 
   let urlScore = 0;
   if (urlAnalyses.length > 0) {
-    const maxUrlScore = Math.max(...urlAnalyses.map((u) => u.riskScore));
-    const avgUrlScore = urlAnalyses.reduce((s, u) => s + u.riskScore, 0) / urlAnalyses.length;
-    urlScore = Math.round(maxUrlScore * 0.7 + avgUrlScore * 0.3);
+    const maxScore = Math.max(...urlAnalyses.map(u => u.riskScore));
+    const avgScore = urlAnalyses.reduce((s, u) => s + u.riskScore, 0) / urlAnalyses.length;
+    urlScore = Math.round(maxScore * 0.7 + avgScore * 0.3);
   }
 
-  const suspiciousUrls = urlAnalyses.filter((u) => u.isSuspicious);
-  const allUrlFlags = suspiciousUrls.flatMap((u) => u.flags);
-
+  // Add URL-based reason if any link looks suspicious
+  const suspiciousUrls = urlAnalyses.filter(u => u.isSuspicious);
   if (suspiciousUrls.length > 0) {
-    ruleReasons.push({
+    const allFlags = suspiciousUrls.flatMap(u => u.flags);
+    reasons.push({
       category: "url",
       description: suspiciousUrls.length === 1
         ? `We found a link in this email that looks suspicious. Clicking it may take you to a fake website designed to steal your information or credentials.`
         : `We found ${suspiciousUrls.length} links in this email that look suspicious. These may redirect to fake websites designed to steal information or install malware.`,
-      severity: suspiciousUrls.some((u) => u.riskScore >= 60) ? "high" : "medium",
-      matchedTerms: [...new Set(allUrlFlags)].slice(0, 5),
+      severity: suspiciousUrls.some(u => u.riskScore >= 60) ? "high" : "medium",
+      matchedTerms: [...new Set(allFlags)].slice(0, 5),
     });
   }
 
-  // Header-based detection reason
+  // Add header-based reason if spoofing was detected
   const headerScore = headerAnalysis.headerScore;
   if (headerScore > 0 && headerAnalysis.issues.length > 0) {
-    ruleReasons.push({
+    reasons.push({
       category: "header",
       description: headerAnalysis.issues[0],
       severity: headerScore >= 60 ? "high" : headerScore >= 30 ? "medium" : "low",
@@ -399,35 +383,40 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     });
   }
 
-  if (urls.length === 0 && ruleReasons.length === 0) {
-    ruleReasons.push({
+  // Fallback reason if nothing specific was caught (ML still had a signal)
+  if (urls.length === 0 && reasons.length === 0) {
+    reasons.push({
       category: "ml_score",
-      description: mlScore > 30 ? "Moderate phishing indicators in email content" : "No significant phishing indicators found",
+      description: mlScore > 30
+        ? "Moderate phishing indicators in email content"
+        : "No significant phishing indicators found",
       severity: mlScore > 60 ? "high" : mlScore > 30 ? "medium" : "low",
       matchedTerms: [],
     });
   }
 
-  const combinedScore = Math.round(
-    mlScore * 0.25 + ruleScore * 0.38 + urlScore * 0.22 + headerScore * 0.15
-  );
+  // Weighted combination: ML 25% + Rules 38% + URLs 22% + Headers 15%
+  const baseScore = Math.round(mlScore * 0.25 + ruleScore * 0.38 + urlScore * 0.22 + headerScore * 0.15);
 
-  // Combination boosters — multiple strong signals together are far more dangerous
-  const hasUrgency = ruleReasons.some((r) => r.category === "urgency");
+  // Bonus points when multiple high-risk signals appear together
+  // (urgency + suspicious link is much worse than either alone)
+  const hasUrgency = reasons.some(r => r.category === "urgency");
   const hasSuspiciousUrl = suspiciousUrls.length > 0;
-  const hasFinancial = ruleReasons.some((r) => r.category === "financial");
-  const hasImpersonation = ruleReasons.some((r) => r.category === "india_specific");
+  const hasFinancial = reasons.some(r => r.category === "financial");
+  const hasImpersonation = reasons.some(r => r.category === "india_specific");
 
-  let bonusScore = 0;
-  if (hasUrgency && hasSuspiciousUrl) bonusScore += 20;
-  if (hasSuspiciousUrl && hasFinancial) bonusScore += 20;
-  if (hasImpersonation && hasUrgency) bonusScore += 15;
-  if (hasUrgency && hasSuspiciousUrl && hasFinancial) bonusScore += 10;
+  let bonus = 0;
+  if (hasUrgency && hasSuspiciousUrl) bonus += 20;
+  if (hasSuspiciousUrl && hasFinancial) bonus += 20;
+  if (hasImpersonation && hasUrgency) bonus += 15;
+  if (hasUrgency && hasSuspiciousUrl && hasFinancial) bonus += 10;
 
-  const finalScore = Math.min(combinedScore + bonusScore, 100);
+  const finalScore = Math.min(baseScore + bonus, 100);
 
+  // Classify and compute confidence
   let classification: "safe" | "suspicious" | "phishing";
   let confidence: number;
+
   if (finalScore >= 71) {
     classification = "phishing";
     confidence = 0.5 + finalScore / 200;
@@ -440,10 +429,13 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
   }
   confidence = Math.min(Math.round(confidence * 100) / 100, 0.99);
 
+  // User-facing warnings — only shown for risky emails
   const warnings: string[] = [];
   if (classification === "phishing") {
     warnings.push("Do not click any links or reply to this email. This appears to be a phishing attempt.");
-    if (suspiciousUrls.length > 0) warnings.push("The links in this email lead to suspicious domains — not the real websites they claim to be.");
+    if (suspiciousUrls.length > 0) {
+      warnings.push("The links in this email lead to suspicious domains — not the real websites they claim to be.");
+    }
     warnings.push("If you think your account may actually be at risk, contact the organization directly using their official number or website.");
   } else if (classification === "suspicious") {
     warnings.push("This email has some unusual patterns. Verify that it is genuine before clicking any links or sharing any information.");
@@ -474,7 +466,7 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     classification,
     confidence,
     detectedLanguage,
-    reasons: ruleReasons,
+    reasons,
     suspiciousSpans,
     urlAnalyses,
     safetyTips,
@@ -485,7 +477,7 @@ export function analyzeEmail(emailText: string): AnalyzeResult {
     headerScore,
     featureImportance,
     headerAnalysis: headerAnalysis.hasHeaders ? {
-      hasHeaders: headerAnalysis.hasHeaders,
+      hasHeaders: true,
       senderEmail: headerAnalysis.senderEmail,
       senderDomain: headerAnalysis.senderDomain,
       displayName: headerAnalysis.displayName,
