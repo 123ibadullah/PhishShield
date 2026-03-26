@@ -1,87 +1,12 @@
 // PhishShield Guardian — Popup script
-// Fetches the scan result for the current tab from the background worker
-// and renders it in the popup UI.
 
-const DEFAULT_API_URL = "http://localhost:8080/api";
 const PHISHSHIELD_APP_URL = "https://phishshield.replit.app";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const CIRC = 2 * Math.PI * 30; // circumference for r=30 ring
 
-function show(id) { document.getElementById(id).style.display = "flex"; }
-function hide(id) { document.getElementById(id).style.display = "none"; }
-function text(id, val) { document.getElementById(id).textContent = val; }
-
-function circumference(r) { return 2 * Math.PI * r; }
-const RADIUS = 30;
-const CIRC = circumference(RADIUS);
-
-function setRingProgress(score, classification) {
-  const fill = document.getElementById("ring-fill");
-  const color = classification === "phishing" ? "#DC2626"
-              : classification === "suspicious" ? "#F59E0B"
-              : "#16A34A";
-  const offset = CIRC - (score / 100) * CIRC;
-  fill.style.strokeDasharray = `${CIRC}`;
-  fill.style.strokeDashoffset = offset;
-  fill.style.stroke = color;
-  document.getElementById("score-num").style.color = color;
-}
-
-// ─── Render functions ─────────────────────────────────────────────────────────
-
-function renderResult(result, tabUrl) {
-  hide("state-loading");
-  hide("state-error");
-
-  if (!result) {
-    show("state-error");
-    return;
-  }
-
-  const { riskScore, classification, reasons = [], flags = [], domain, isIndianBankingRelated } = result;
-
-  if (classification === "safe") {
-    hide("state-result");
-    show("state-safe");
-    document.getElementById("safe-domain-text").textContent = domain || new URL(tabUrl || "").hostname;
-    return;
-  }
-
-  show("state-result");
-
-  // Score ring
-  text("score-num", riskScore);
-  setRingProgress(riskScore, classification);
-
-  // Verdict badge
-  const badge = document.getElementById("verdict-badge");
-  badge.textContent = classification.charAt(0).toUpperCase() + classification.slice(1);
-  badge.className = `verdict-badge ${classification}`;
-  text("score-label", `Risk score ${riskScore}/100`);
-
-  // Domain
-  text("domain-text", domain || "—");
-
-  // Indian banking alert
-  if (isIndianBankingRelated) {
-    document.getElementById("india-alert").style.display = "block";
-  } else {
-    document.getElementById("india-alert").style.display = "none";
-  }
-
-  // Reasons
-  const reasonsList = document.getElementById("reasons-list");
-  reasonsList.innerHTML = reasons.slice(0, 4).map(r =>
-    `<li class="reason-item">${escapeHtml(r)}</li>`
-  ).join("") || `<li class="reason-item" style="color:#475569">No specific reason text available.</li>`;
-
-  // Flags as chips
-  const flagsWrap = document.getElementById("flags-wrap");
-  const chipClass = classification === "phishing" ? "" : "amber";
-  flagsWrap.innerHTML = flags.slice(0, 6).map(f =>
-    `<span class="flag-chip ${chipClass}">${escapeHtml(f)}</span>`
-  ).join("") || `<span style="color:#475569;font-size:12px">None</span>`;
-}
+function show(id) { const el = document.getElementById(id); if (el) el.style.display = "flex"; }
+function hide(id) { const el = document.getElementById(id); if (el) el.style.display = "none"; }
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
 function escapeHtml(str) {
   return String(str)
@@ -89,77 +14,84 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// ─── Main init ────────────────────────────────────────────────────────────────
+function renderResult(result, tabUrl) {
+  hide("state-loading");
 
-async function init() {
-  // Show loading immediately
-  show("state-loading");
-  ["state-result", "state-safe", "state-error"].forEach(hide);
+  if (!result || result.classification === "safe") {
+    hide("state-result");
+    show("state-safe");
+    try {
+      const domain = result?.domain || new URL(tabUrl || "").hostname;
+      setText("safe-domain-text", domain);
+    } catch { /* ignore */ }
+    return;
+  }
 
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab) { show("state-error"); hide("state-loading"); return; }
+  show("state-result");
 
-  const tabUrl = tab.url;
+  const { riskScore, classification, reasons = [], flags = [], domain, isIndianBankingRelated } = result;
 
-  // Ask background for cached result
-  chrome.runtime.sendMessage({ type: "GET_TAB_RESULT", tabId: tab.id }, result => {
-    hide("state-loading");
-    if (chrome.runtime.lastError) { show("state-error"); return; }
-    renderResult(result, tabUrl);
-  });
+  // Score ring
+  const fill  = document.getElementById("ring-fill");
+  const color = classification === "phishing" ? "#DC2626" : "#F59E0B";
+  fill.style.stroke = color;
+  fill.style.strokeDasharray  = `${CIRC}`;
+  fill.style.strokeDashoffset = CIRC - (riskScore / 100) * CIRC;
+  document.getElementById("score-num").style.color = color;
+  setText("score-num", riskScore);
 
-  // Re-scan button (result view)
-  document.getElementById("btn-recheck").addEventListener("click", () => {
-    show("state-loading");
-    ["state-result", "state-safe", "state-error"].forEach(hide);
-    chrome.runtime.sendMessage({ type: "RECHECK_TAB", tabId: tab.id, url: tabUrl }, () => {
-      chrome.runtime.sendMessage({ type: "GET_TAB_RESULT", tabId: tab.id }, result => {
-        hide("state-loading");
-        renderResult(result, tabUrl);
-      });
-    });
-  });
+  // Verdict badge
+  const badge = document.getElementById("verdict-badge");
+  badge.textContent = classification.charAt(0).toUpperCase() + classification.slice(1);
+  badge.className   = `verdict-badge ${classification}`;
+  setText("score-label", `Risk score ${riskScore} / 100`);
 
-  // Re-scan button (safe view)
-  document.getElementById("btn-recheck-safe").addEventListener("click", () => {
-    show("state-loading");
-    ["state-result", "state-safe", "state-error"].forEach(hide);
-    chrome.runtime.sendMessage({ type: "RECHECK_TAB", tabId: tab.id, url: tabUrl }, () => {
-      chrome.runtime.sendMessage({ type: "GET_TAB_RESULT", tabId: tab.id }, result => {
-        hide("state-loading");
-        renderResult(result, tabUrl);
-      });
-    });
-  });
+  // Domain
+  setText("domain-text", domain || "—");
 
-  // Open PhishShield web app buttons
-  const openApp = () => chrome.tabs.create({ url: PHISHSHIELD_APP_URL });
-  document.getElementById("btn-open").addEventListener("click", openApp);
-  document.getElementById("btn-open-safe").addEventListener("click", openApp);
+  // Indian banking alert
+  document.getElementById("india-alert").style.display = isIndianBankingRelated ? "block" : "none";
+
+  // Reasons
+  const reasonsList = document.getElementById("reasons-list");
+  reasonsList.innerHTML = reasons.slice(0, 4).map(r =>
+    `<li class="reason-item">${escapeHtml(r)}</li>`
+  ).join("") || `<li class="reason-item" style="color:#475569">No specific reason available.</li>`;
+
+  // Flags as chips
+  const chipClass = classification === "phishing" ? "" : "amber";
+  const flagsWrap = document.getElementById("flags-wrap");
+  flagsWrap.innerHTML = flags.slice(0, 6).map(f =>
+    `<span class="flag-chip ${chipClass}">${escapeHtml(f)}</span>`
+  ).join("") || `<span style="color:#475569;font-size:12px">None</span>`;
 }
 
-// ─── Settings panel ───────────────────────────────────────────────────────────
+async function rescan(tab) {
+  show("state-loading");
+  ["state-result", "state-safe"].forEach(hide);
+  await chrome.runtime.sendMessage({ type: "RECHECK_TAB", tabId: tab.id, url: tab.url });
+  const result = await chrome.runtime.sendMessage({ type: "GET_TAB_RESULT", tabId: tab.id });
+  hide("state-loading");
+  renderResult(result, tab.url);
+}
 
-document.getElementById("settings-toggle").addEventListener("click", () => {
-  const panel = document.getElementById("settings-panel");
-  panel.style.display = panel.style.display === "block" ? "none" : "block";
-});
+async function init() {
+  show("state-loading");
+  ["state-result", "state-safe"].forEach(hide);
 
-// Load saved API URL
-chrome.storage.sync.get({ apiUrl: DEFAULT_API_URL }, data => {
-  document.getElementById("api-url-input").value = data.apiUrl;
-});
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) { hide("state-loading"); return; }
 
-document.getElementById("save-api-url").addEventListener("click", () => {
-  const newUrl = document.getElementById("api-url-input").value.trim();
-  if (!newUrl) return;
-  chrome.storage.sync.set({ apiUrl: newUrl }, () => {
-    const msg = document.getElementById("save-msg");
-    msg.style.display = "block";
-    setTimeout(() => { msg.style.display = "none"; }, 2000);
-  });
-});
+  const result = await chrome.runtime.sendMessage({ type: "GET_TAB_RESULT", tabId: tab.id });
+  hide("state-loading");
+  renderResult(result, tab.url);
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
+  const openApp = () => chrome.tabs.create({ url: PHISHSHIELD_APP_URL });
+
+  document.getElementById("btn-recheck").addEventListener("click",      () => rescan(tab));
+  document.getElementById("btn-recheck-safe").addEventListener("click", () => rescan(tab));
+  document.getElementById("btn-open").addEventListener("click",          openApp);
+  document.getElementById("btn-open-safe").addEventListener("click",     openApp);
+}
 
 init();

@@ -1,144 +1,226 @@
 // PhishShield Guardian — Background Service Worker
-// Checks each tab's URL against the PhishShield API and broadcasts
-// the result to the content script so it can show/hide the overlay.
+// All detection runs locally inside the extension — no external API needed.
+// This means instant results, no auth issues, and works offline.
 
-const DEFAULT_API_URL = "http://localhost:8080/api";
+// ─── Detection rules (mirrored from the PhishShield backend) ─────────────────
 
-// In-memory cache keyed by URL to avoid hammering the API for the same page
-const resultCache = new Map();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const SUSPICIOUS_TLDS = [
+  ".xyz", ".tk", ".ml", ".ga", ".cf", ".gq", ".pw",
+  ".top", ".club", ".online", ".site", ".icu", ".work",
+  ".loan", ".click", ".link", ".biz",
+];
 
-// Internal pages we never check (new tab, settings, extensions themselves, etc.)
-const SKIP_PROTOCOLS = ["chrome:", "chrome-extension:", "edge:", "about:", "data:", "file:"];
+const URL_SHORTENERS = [
+  "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly",
+  "short.io", "rebrand.ly", "cutt.ly", "tiny.cc", "bl.ink",
+  "clk.sh", "is.gd", "v.gd",
+];
 
-function shouldSkipUrl(url) {
-  if (!url) return true;
-  return SKIP_PROTOCOLS.some(p => url.startsWith(p));
-}
+const LOOKALIKE_PATTERNS = [
+  [/paypa[l1]|payp4l/i,                          "PayPal lookalike domain"],
+  [/g00gle|g0ogle|gooogle/i,                     "Google lookalike domain"],
+  [/amaz0n|am4zon|amazzon/i,                     "Amazon lookalike domain"],
+  [/faceb00k|f4cebook|faceb0ok/i,                "Facebook lookalike domain"],
+  [/sb[i1]-|sb[i1]\.|sbi-online|sbi_online/i,   "SBI lookalike domain"],
+  [/hdf[c0]-|hdfcbank-/i,                        "HDFC lookalike domain"],
+  [/icic[i1]-|icicibankk/i,                      "ICICI lookalike domain"],
+  [/payt[m0]-|paytrn/i,                          "Paytm lookalike domain"],
+  [/ph0nepe|phonep3/i,                           "PhonePe lookalike domain"],
+  [/[a-z]+-secure-|secure-[a-z]+\./i,           "Fake 'secure' domain pattern"],
+  [/[a-z]+-update\./i,                           "Fake 'update' domain pattern"],
+  [/[a-z]+-verify\./i,                           "Fake 'verify' domain pattern"],
+  [/[a-z]+-alert\./i,                            "Fake 'alert' domain pattern"],
+  [/[a-z]+-kyc\./i,                              "Fake 'KYC' domain pattern"],
+  [/[a-z]+-reward\./i,                           "Fake 'reward' domain pattern"],
+  [/[a-z]+-claim\./i,                            "Fake 'claim' domain pattern"],
+];
 
-async function getApiUrl() {
-  return new Promise(resolve => {
-    chrome.storage.sync.get({ apiUrl: DEFAULT_API_URL }, data => {
-      resolve(data.apiUrl || DEFAULT_API_URL);
-    });
-  });
-}
+const INDIA_BANKS = [
+  "sbi", "hdfc", "icici", "axisbank", "pnb", "kotak",
+  "yesbank", "indusind", "bankofbaroda", "canarabank", "unionbank",
+];
 
-async function checkUrl(url) {
-  // Return cached result if fresh
-  const cached = resultCache.get(url);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-    return cached.data;
-  }
+const INDIA_SERVICES = [
+  "paytm", "phonepe", "gpay", "bhimupi", "irctc", "uidai",
+  "aadhaar", "incometax", "epfo", "nsdl", "cibil",
+];
 
-  const apiUrl = await getApiUrl();
+function extractDomain(url) {
   try {
-    const response = await fetch(`${apiUrl}/check-url`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-
-    if (!response.ok) {
-      console.warn("PhishShield API error:", response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    resultCache.set(url, { data, ts: Date.now() });
-    return data;
-  } catch (err) {
-    console.warn("PhishShield: API unreachable —", err.message);
-    return null;
+    const normalized = url.startsWith("http") ? url : "https://" + url;
+    return new URL(normalized).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    const match = url.match(/(?:https?:\/\/)?(?:www\.)?([^/\s?#]+)/i);
+    return match ? match[1].toLowerCase() : url;
   }
 }
 
-function updateBadge(tabId, result) {
-  if (!result) {
+function checkUrl(url) {
+  if (!url || !url.startsWith("http")) return null;
+
+  const domain = extractDomain(url);
+  const flags = [];
+  const reasons = [];
+  let score = 0;
+
+  // Suspicious TLD
+  const tld = "." + domain.split(".").pop();
+  if (SUSPICIOUS_TLDS.includes(tld)) {
+    flags.push(`Suspicious TLD: ${tld}`);
+    reasons.push(`This site uses the "${tld}" domain, which is commonly used in phishing campaigns.`);
+    score += 30;
+  }
+
+  // URL shortener
+  if (URL_SHORTENERS.some(s => domain.includes(s))) {
+    flags.push("URL shortener detected");
+    reasons.push("A link shortener hides the real destination — the site you end up at could be anything.");
+    score += 25;
+  }
+
+  // Lookalike domain
+  let lookalikMatched = false;
+  for (const [pattern, label] of LOOKALIKE_PATTERNS) {
+    if (pattern.test(domain)) {
+      flags.push(label);
+      reasons.push(`"${domain}" appears to impersonate a trusted brand (${label}). This is a classic phishing tactic.`);
+      score += 45;
+      lookalikMatched = true;
+      break;
+    }
+  }
+
+  // Deep subdomain structure
+  if (domain.split(".").length > 3) {
+    flags.push("Complex subdomain structure");
+    reasons.push("Fake sites often use deep subdomains to look like part of a legitimate website.");
+    score += 15;
+  }
+
+  // Numbers in primary domain
+  if (/[0-9]/.test(domain.split(".")[0])) {
+    flags.push("Numbers in domain name");
+    reasons.push("Legitimate brands rarely use numbers in their domain name — a common sign of a spoofed site.");
+    score += 10;
+  }
+
+  // Unusually long URL
+  if (url.length > 100) {
+    flags.push("Unusually long URL");
+    reasons.push("Phishing links are often deliberately long to discourage inspection.");
+    score += 10;
+  }
+
+  // Sensitive URL parameters
+  if (/token=|session=|verify=|otp=|password=|pin=/i.test(url)) {
+    flags.push("Sensitive parameters in URL");
+    reasons.push("The URL contains sensitive fields (OTP, token, password) in the address — a red flag for credential theft.");
+    score += 20;
+  }
+
+  // Deceptive keywords in domain
+  if (/secure|login|verify|account|update|confirm|kyc|claim|reward/i.test(domain)) {
+    flags.push("Deceptive keyword in domain");
+    reasons.push(`The domain uses a word like "secure", "login", or "kyc" to appear trustworthy.`);
+    score += 15;
+  }
+
+  // Indian banking / payment context
+  const domainStripped = domain.toLowerCase().replace(/[-_.]/g, "");
+  const matchedBank = INDIA_BANKS.find(b => domainStripped.includes(b));
+  const matchedService = INDIA_SERVICES.find(s => domainStripped.includes(s));
+  const isIndianBankingRelated = !!(matchedBank || matchedService);
+
+  if (isIndianBankingRelated && score > 15) {
+    const brandName = (matchedBank || matchedService).toUpperCase();
+    reasons.push(
+      matchedBank
+        ? `This looks like a fake ${brandName} banking page. Real banks will NEVER ask for your OTP or PIN through a link.`
+        : `This appears to impersonate ${brandName}. Never enter your UPI PIN or Aadhaar details on suspicious sites.`
+    );
+    score = Math.min(score + 20, 100);
+  }
+
+  const finalScore = Math.min(score, 100);
+  const classification = finalScore >= 71 ? "phishing" : finalScore >= 31 ? "suspicious" : "safe";
+
+  // Which parts of the URL to highlight
+  const suspiciousParts = [];
+  if (SUSPICIOUS_TLDS.includes(tld)) suspiciousParts.push({ part: tld, reason: "Suspicious TLD" });
+  if (lookalikMatched) suspiciousParts.push({ part: domain, reason: "Lookalike domain" });
+
+  return { url, domain, riskScore: finalScore, classification, flags, reasons, isIndianBankingRelated, suspiciousParts };
+}
+
+// ─── Internal pages we never check ───────────────────────────────────────────
+
+const SKIP_PREFIXES = ["chrome:", "chrome-extension:", "edge:", "about:", "data:", "file:"];
+
+function shouldSkip(url) {
+  return !url || SKIP_PREFIXES.some(p => url.startsWith(p));
+}
+
+// ─── Per-tab result cache ─────────────────────────────────────────────────────
+
+const tabResults = new Map(); // tabId → result
+
+function analyzeTab(tabId, url) {
+  if (shouldSkip(url)) {
     chrome.action.setBadgeText({ tabId, text: "" });
+    tabResults.delete(tabId);
     return;
   }
 
-  const score = result.riskScore;
-  let color;
-  let text;
+  const result = checkUrl(url);
+  tabResults.set(tabId, result);
 
-  if (result.classification === "phishing") {
-    color = "#DC2626"; // red
-    text = score.toString();
-  } else if (result.classification === "suspicious") {
-    color = "#F59E0B"; // amber
-    text = score.toString();
-  } else {
-    color = "#16A34A"; // green
-    text = "✓";
+  updateBadge(tabId, result);
+
+  // Push result to content script
+  chrome.tabs.sendMessage(tabId, { type: "PHISHSHIELD_RESULT", data: result, url })
+    .catch(() => {}); // content script may not be ready yet — that's fine
+}
+
+function updateBadge(tabId, result) {
+  if (!result || result.classification === "safe") {
+    chrome.action.setBadgeText({ tabId, text: "" });
+    return;
   }
-
+  const color = result.classification === "phishing" ? "#DC2626" : "#F59E0B";
+  const text  = result.classification === "phishing" ? result.riskScore.toString() : "!";
   chrome.action.setBadgeBackgroundColor({ tabId, color });
   chrome.action.setBadgeText({ tabId, text });
 }
 
-async function analyzeTab(tabId, url) {
-  if (shouldSkipUrl(url)) return;
-
-  const result = await checkUrl(url);
-  updateBadge(tabId, result);
-
-  // Store the latest result for this tab so the popup can read it
-  chrome.storage.session.set({ [`tab_${tabId}`]: result || null });
-
-  // Push the result to the content script if the page is still open
-  try {
-    await chrome.tabs.sendMessage(tabId, {
-      type: "PHISHSHIELD_RESULT",
-      data: result,
-      url,
-    });
-  } catch {
-    // Content script may not be ready yet — that's fine
-  }
-}
-
 // ─── Event listeners ──────────────────────────────────────────────────────────
 
-// Check URL every time a tab finishes loading
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url) {
     analyzeTab(tabId, tab.url);
   }
 });
 
-// Clear badge when tab navigates away
 chrome.tabs.onRemoved.addListener(tabId => {
-  chrome.storage.session.remove(`tab_${tabId}`);
+  tabResults.delete(tabId);
 });
 
-// Respond to content script and popup requests
+// Respond to messages from content script and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "GET_RESULT") {
-    // Content script asking for the cached result for the current tab
     const tabId = sender.tab?.id;
-    if (!tabId) { sendResponse(null); return; }
-    chrome.storage.session.get(`tab_${tabId}`, data => {
-      sendResponse(data[`tab_${tabId}`] ?? null);
-    });
-    return true; // keep channel open for async response
+    sendResponse(tabId ? (tabResults.get(tabId) ?? null) : null);
+    return true;
   }
 
   if (message.type === "GET_TAB_RESULT") {
-    // Popup asking for the result for a specific tab
-    const { tabId } = message;
-    chrome.storage.session.get(`tab_${tabId}`, data => {
-      sendResponse(data[`tab_${tabId}`] ?? null);
-    });
+    sendResponse(tabResults.get(message.tabId) ?? null);
     return true;
   }
 
   if (message.type === "RECHECK_TAB") {
-    // Popup requested a fresh check
     const { tabId, url } = message;
-    resultCache.delete(url);
-    analyzeTab(tabId, url).then(() => sendResponse({ ok: true }));
+    analyzeTab(tabId, url);
+    sendResponse({ ok: true });
     return true;
   }
 });
