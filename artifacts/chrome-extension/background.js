@@ -206,12 +206,28 @@ chrome.tabs.onRemoved.addListener(tabId => {
 
 // Respond to messages from content script and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
+  // Content script asking for the result for the current tab
   if (message.type === "GET_RESULT") {
     const tabId = sender.tab?.id;
-    sendResponse(tabId ? (tabResults.get(tabId) ?? null) : null);
+    const tabUrl = sender.tab?.url;
+    if (!tabId) { sendResponse(null); return true; }
+
+    let result = tabResults.get(tabId);
+
+    // If no cached result yet (race condition), analyze now and cache it
+    if (!result && tabUrl && !shouldSkip(tabUrl)) {
+      result = checkUrl(tabUrl);
+      if (result) {
+        tabResults.set(tabId, result);
+        updateBadge(tabId, result);
+      }
+    }
+    sendResponse(result ?? null);
     return true;
   }
 
+  // Popup asking for the result of a specific tab
   if (message.type === "GET_TAB_RESULT") {
     sendResponse(tabResults.get(message.tabId) ?? null);
     return true;

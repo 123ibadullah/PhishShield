@@ -293,16 +293,37 @@
     }
   });
 
-  // Also request the result on page load in case the message was already sent
-  // before this content script was ready
-  chrome.runtime.sendMessage({ type: "GET_RESULT" }, (result) => {
-    if (chrome.runtime.lastError) return; // extension reloaded
-    if (!result) return;
+  // ─── Request result on page load, with retry logic ────────────────────────
+  // The background may not have finished analysis yet (race condition),
+  // so we retry a few times with increasing delays.
 
+  let shown = false;
+
+  function handleResult(result) {
+    if (!result || shown) return;
+    if (result.classification === "phishing" || result.classification === "suspicious") {
+      shown = true;
+    }
     if (result.classification === "phishing") {
       showPhishingOverlay(result);
     } else if (result.classification === "suspicious") {
       showSuspiciousBanner(result);
     }
-  });
+  }
+
+  function requestResult(attempt) {
+    if (shown) return;
+    chrome.runtime.sendMessage({ type: "GET_RESULT" }, (result) => {
+      if (chrome.runtime.lastError) return;
+      if (result) {
+        handleResult(result);
+      } else if (attempt < 5) {
+        // Back off: 200ms → 400ms → 800ms → 1200ms → 2000ms
+        const delay = [200, 400, 800, 1200, 2000][attempt];
+        setTimeout(() => requestResult(attempt + 1), delay);
+      }
+    });
+  }
+
+  requestResult(0);
 })();
