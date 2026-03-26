@@ -162,7 +162,8 @@ function shouldSkip(url) {
 
 // ─── Per-tab result cache ─────────────────────────────────────────────────────
 
-const tabResults = new Map(); // tabId → result
+const tabResults  = new Map(); // tabId → result
+const allowedUrls = new Set(); // URLs the user has explicitly approved (allow once)
 
 function analyzeTab(tabId, url) {
   if (shouldSkip(url)) {
@@ -192,10 +193,55 @@ function updateBadge(tabId, result) {
   chrome.action.setBadgeText({ tabId, text });
 }
 
+// ─── Extension's own warning page URL prefix ──────────────────────────────────
+
+function getWarningUrl(result, originalUrl) {
+  const params = new URLSearchParams({
+    url:     originalUrl,
+    score:   result.riskScore,
+    reasons: JSON.stringify(result.reasons || []),
+    india:   result.isIndianBankingRelated ? "1" : "0",
+    dest:    originalUrl,
+  });
+  return chrome.runtime.getURL("warning.html") + "?" + params.toString();
+}
+
 // ─── Event listeners ──────────────────────────────────────────────────────────
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // ── Intercept at navigation start (before page loads) ──
+  // changeInfo.url is only set when the URL actually changes (new navigation)
+  if (changeInfo.url && !shouldSkip(changeInfo.url)) {
+    const url = changeInfo.url;
+
+    // Don't intercept our own warning page
+    const warningBase = chrome.runtime.getURL("warning.html");
+    if (url.startsWith(warningBase)) return;
+
+    const result = checkUrl(url);
+    if (!result) return;
+
+    tabResults.set(tabId, result);
+    updateBadge(tabId, result);
+
+    if (result.classification === "phishing") {
+      // If user already approved this URL (clicked "proceed anyway"), let it load
+      if (allowedUrls.has(url)) {
+        allowedUrls.delete(url); // allow once only
+        return;
+      }
+      // Redirect to our built-in warning page immediately
+      chrome.tabs.update(tabId, { url: getWarningUrl(result, url) });
+      return;
+    }
+  }
+
+  // ── After page fully loads: update badge + push result to content script ──
   if (changeInfo.status === "complete" && tab.url) {
+    // Don't re-analyze our own warning page
+    const warningBase = chrome.runtime.getURL("warning.html");
+    if (tab.url.startsWith(warningBase)) return;
+
     analyzeTab(tabId, tab.url);
   }
 });
@@ -236,6 +282,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "RECHECK_TAB") {
     const { tabId, url } = message;
     analyzeTab(tabId, url);
+    sendResponse({ ok: true });
+    return true;
+  }
+
+  // User clicked "proceed anyway" on the warning page — allow this URL once
+  if (message.type === "ALLOW_URL") {
+    allowedUrls.add(message.url);
     sendResponse({ ok: true });
     return true;
   }

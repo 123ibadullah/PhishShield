@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PhishShield Guardian — Phishing Warning</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f172a;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #dc2626;
+      border-radius: 20px;
+      max-width: 640px;
+      width: 100%;
+      padding: 40px;
+      box-shadow: 0 0 60px rgba(220,38,38,0.2);
+      animation: pulse-border 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 40px rgba(220,38,38,0.2); }
+      50%       { box-shadow: 0 0 80px rgba(220,38,38,0.4); }
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .shield-icon {
+      width: 56px; height: 56px;
+      background: rgba(220,38,38,0.15);
+      border: 2px solid rgba(220,38,38,0.4);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .top-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #f87171;
+    }
+
+    .top-text p {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(220,38,38,0.08);
+      border: 1px solid rgba(220,38,38,0.2);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+
+    .score-circle {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 4px solid #dc2626;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      color: #f87171;
+      flex-shrink: 0;
+    }
+
+    .score-info h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f87171;
+    }
+
+    .score-info p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    .url-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .url-box span:first-child { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    .url-text {
+      font-family: monospace;
+      font-size: 13px;
+      color: #f87171;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .india-alert {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #fbbf24;
+      line-height: 1.6;
+    }
+
+    .india-alert strong { color: #fde68a; }
+
+    .reasons-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #475569;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .reasons-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .reason-item {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .reason-item::before {
+      content: "›";
+      color: #f87171;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-back {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .btn-proceed {
+      background: #1e293b;
+      color: #64748b;
+      border: 1px solid #334155;
+      font-size: 13px;
+    }
+
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 11px;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="shield-icon">🛡</div>
+      <div class="top-text">
+        <h1>Phishing Site Blocked</h1>
+        <p>PhishShield Guardian stopped this page from loading</p>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-circle" id="score-circle">—</div>
+      <div class="score-info">
+        <h2 id="score-label">Risk Score: —/100</h2>
+        <p>This site has been identified as a phishing threat</p>
+      </div>
+    </div>
+
+    <div class="url-box">
+      <span>🔗</span>
+      <div class="url-text" id="url-text">—</div>
+    </div>
+
+    <div class="india-alert" id="india-alert" style="display:none">
+      🏦 <strong>Indian Banking / UPI Alert:</strong> This site appears to impersonate a real bank or payment service.
+      Real banks will <strong>never</strong> ask for your OTP, UPI PIN, or Aadhaar details through a link.
+    </div>
+
+    <div class="reasons-title">Why this site was blocked</div>
+    <ul class="reasons-list" id="reasons-list"></ul>
+
+    <div class="actions">
+      <button class="btn btn-back" onclick="goBack()">← Take Me to Safety</button>
+      <button class="btn btn-proceed" onclick="proceedAnyway()">I understand the risk, proceed anyway</button>
+    </div>
+
+    <div class="footer">PhishShield Guardian · Detection runs entirely on-device · No data is sent anywhere</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const url        = params.get("url")   || "";
+    const score      = parseInt(params.get("score") || "0", 10);
+    const reasons    = JSON.parse(params.get("reasons") || "[]");
+    const india      = params.get("india") === "1";
+    const dest       = params.get("dest")  || "";
+
+    document.getElementById("score-circle").textContent = score;
+    document.getElementById("score-label").textContent  = `Risk Score: ${score}/100`;
+    document.getElementById("url-text").textContent     = url;
+
+    if (india) document.getElementById("india-alert").style.display = "block";
+
+    const list = document.getElementById("reasons-list");
+    if (reasons.length) {
+      reasons.forEach(r => {
+        const li = document.createElement("li");
+        li.className = "reason-item";
+        li.textContent = r;
+        list.appendChild(li);
+      });
+    } else {
+      const li = document.createElement("li");
+      li.className = "reason-item";
+      li.textContent = "This site matched multiple phishing indicators.";
+      list.appendChild(li);
+    }
+
+    function goBack() {
+      if (history.length > 1) history.back();
+      else window.close();
+    }
+
+    function proceedAnyway() {
+      if (!dest) return;
+      // Tell background to allow this URL once (prevents redirect loop)
+      chrome.runtime.sendMessage({ type: "ALLOW_URL", url: dest }, () => {
+        location.href = dest;
+      });
+    }
+  </script>
+</body>
+</html>

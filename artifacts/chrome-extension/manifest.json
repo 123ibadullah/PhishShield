@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "PhishShield Guardian",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Real-time phishing protection with Indian banking context. Powered by PhishShield AI.",
 
-  "permissions": ["activeTab", "storage", "tabs"],
+  "permissions": ["activeTab", "storage", "tabs", "webNavigation"],
   "host_permissions": ["https://*/*", "http://*/*"],
 
   "background": {
@@ -15,7 +15,14 @@
     {
       "matches": ["http://*/*", "https://*/*"],
       "js": ["content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["warning.html"],
+      "matches": ["<all_urls>"]
     }
   ],
 
