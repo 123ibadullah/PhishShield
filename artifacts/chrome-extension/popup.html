@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishShield Guardian</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 340px;
+      background: #0f172a;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+    }
+
+    /* Header */
+    .header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; border-bottom: 1px solid #1e293b;
+      background: #0f172a;
+    }
+    .header-icon { font-size: 22px; }
+    .header-title { font-size: 14px; font-weight: 700; color: #f1f5f9; }
+    .header-sub { font-size: 10px; color: #64748b; margin-top: 1px; }
+    .header-badge {
+      margin-left: auto;
+      font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(22, 163, 74, 0.15);
+      color: #4ade80; border: 1px solid rgba(22, 163, 74, 0.3);
+    }
+
+    /* Main content */
+    .content { padding: 14px 16px; }
+
+    /* Loading state */
+    #state-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 0; color: #64748b; }
+    .spinner {
+      width: 24px; height: 24px; border: 2px solid #1e293b;
+      border-top-color: #3b82f6; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error state */
+    #state-error { display: none; flex-direction: column; align-items: center; gap: 8px; padding: 28px 0; color: #94a3b8; text-align: center; }
+    #state-error .err-icon { font-size: 28px; }
+
+    /* Result states */
+    #state-result { display: none; }
+    #state-safe   { display: none; }
+
+    /* Score ring */
+    .score-section {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
+    }
+    .score-ring-wrap { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+    .score-ring-wrap svg { transform: rotate(-90deg); }
+    .score-ring-bg { fill: none; stroke: #1e293b; stroke-width: 6; }
+    .score-ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+    .score-number {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800;
+    }
+    .score-info { flex: 1; }
+    .verdict-badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .verdict-badge.phishing { background: rgba(220,38,38,0.15); color: #f87171; border: 1px solid rgba(220,38,38,0.35); }
+    .verdict-badge.suspicious { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35); }
+    .verdict-badge.safe { background: rgba(22,163,74,0.15); color: #4ade80; border: 1px solid rgba(22,163,74,0.3); }
+    .score-label { font-size: 11px; color: #64748b; }
+
+    /* Domain */
+    .domain-row {
+      display: flex; align-items: center; gap: 6px;
+      background: #1e293b; border-radius: 8px; padding: 8px 10px;
+      margin-bottom: 12px;
+    }
+    .domain-icon { font-size: 13px; }
+    .domain-text { font-family: monospace; font-size: 12px; color: #94a3b8; word-break: break-all; flex: 1; }
+
+    /* Indian banking */
+    .india-alert {
+      background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;
+      font-size: 12px; color: #fbbf24; line-height: 1.4;
+    }
+
+    /* Reasons */
+    .section-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #475569; font-weight: 600; margin-bottom: 7px;
+    }
+    .reasons-list { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .reason-item {
+      font-size: 12px; color: #94a3b8; line-height: 1.4;
+      padding-left: 14px; position: relative;
+    }
+    .reason-item::before { content: "›"; position: absolute; left: 0; color: #ef4444; font-weight: 700; }
+
+    /* Flags */
+    .flags-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+    .flag-chip {
+      font-size: 10px; padding: 2px 8px; border-radius: 999px;
+      background: rgba(220,38,38,0.1); color: #f87171;
+      border: 1px solid rgba(220,38,38,0.25);
+    }
+    .flag-chip.amber { background: rgba(245,158,11,0.1); color: #fbbf24; border-color: rgba(245,158,11,0.25); }
+
+    /* Actions */
+    .actions { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+    .btn {
+      width: 100%; padding: 9px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      border: none; transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-recheck { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .btn-open { background: #2563eb; color: white; }
+
+    /* Safe state */
+    .safe-card {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 0 20px; gap: 8px; text-align: center;
+    }
+    .safe-icon { font-size: 40px; margin-bottom: 4px; }
+    .safe-title { font-size: 15px; font-weight: 700; color: #4ade80; }
+    .safe-sub { font-size: 12px; color: #64748b; max-width: 240px; line-height: 1.5; }
+
+    /* Settings */
+    .settings-toggle {
+      width: 100%; text-align: center; padding: 8px;
+      color: #475569; font-size: 11px; cursor: pointer;
+      background: none; border: none; border-top: 1px solid #1e293b;
+    }
+    .settings-toggle:hover { color: #64748b; }
+    #settings-panel {
+      display: none; padding: 12px 16px; border-top: 1px solid #1e293b;
+    }
+    #settings-panel .label { font-size: 11px; color: #64748b; margin-bottom: 5px; }
+    #settings-panel input {
+      width: 100%; padding: 7px 10px; background: #1e293b;
+      border: 1px solid #334155; border-radius: 7px;
+      color: #f1f5f9; font-size: 12px; font-family: monospace;
+      outline: none; margin-bottom: 7px;
+    }
+    #settings-panel input:focus { border-color: #3b82f6; }
+    #settings-panel .save-btn {
+      width: 100%; padding: 7px; background: #1e293b; color: #94a3b8;
+      border: 1px solid #334155; border-radius: 7px; cursor: pointer;
+      font-size: 12px; font-weight: 600;
+    }
+    #settings-panel .save-btn:hover { color: #f1f5f9; }
+    #save-msg { font-size: 11px; color: #4ade80; margin-top: 4px; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-icon">🛡</div>
+    <div>
+      <div class="header-title">PhishShield Guardian</div>
+      <div class="header-sub">Real-time phishing protection</div>
+    </div>
+    <div class="header-badge">● Active</div>
+  </div>
+
+  <div class="content">
+
+    <!-- Loading -->
+    <div id="state-loading">
+      <div class="spinner"></div>
+      <div>Checking this site…</div>
+    </div>
+
+    <!-- API error / not reachable -->
+    <div id="state-error">
+      <div class="err-icon">⚠️</div>
+      <div>Could not reach the PhishShield API.</div>
+      <div style="font-size:11px;color:#475569;margin-top:4px;">Check your API URL in settings below.</div>
+    </div>
+
+    <!-- Result for phishing / suspicious -->
+    <div id="state-result">
+      <div class="score-section">
+        <div class="score-ring-wrap">
+          <svg viewBox="0 0 72 72" width="72" height="72">
+            <circle class="score-ring-bg" cx="36" cy="36" r="30" />
+            <circle id="ring-fill" class="score-ring-fill" cx="36" cy="36" r="30" />
+          </svg>
+          <div class="score-number" id="score-num">—</div>
+        </div>
+        <div class="score-info">
+          <div id="verdict-badge" class="verdict-badge">—</div>
+          <div class="score-label" id="score-label">Risk score / 100</div>
+        </div>
+      </div>
+
+      <div class="domain-row">
+        <div class="domain-icon">🌐</div>
+        <div class="domain-text" id="domain-text">—</div>
+      </div>
+
+      <div id="india-alert" class="india-alert" style="display:none">
+        🏦 This looks like a fake banking or UPI-related site.
+        Real banks will <strong>never</strong> ask for your OTP or PIN through a suspicious link.
+      </div>
+
+      <div class="section-label">Why it was flagged</div>
+      <ul class="reasons-list" id="reasons-list"></ul>
+
+      <div class="section-label">Signals detected</div>
+      <div class="flags-wrap" id="flags-wrap"></div>
+
+      <div class="actions">
+        <button class="btn btn-recheck" id="btn-recheck">↻ Re-scan this page</button>
+        <button class="btn btn-open" id="btn-open">Open in PhishShield AI →</button>
+      </div>
+    </div>
+
+    <!-- Safe result -->
+    <div id="state-safe">
+      <div class="safe-card">
+        <div class="safe-icon">✅</div>
+        <div class="safe-title">Looks Safe</div>
+        <div class="safe-sub" id="safe-domain-text"></div>
+        <div class="safe-sub" style="margin-top:6px;">No phishing signals detected. Stay alert when sharing sensitive information online.</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-recheck" id="btn-recheck-safe">↻ Re-scan</button>
+        <button class="btn btn-open" id="btn-open-safe">Open PhishShield AI →</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <button class="settings-toggle" id="settings-toggle">⚙ Settings</button>
+  <div id="settings-panel">
+    <div class="label">PhishShield API URL</div>
+    <input type="text" id="api-url-input" placeholder="http://localhost:8080/api" />
+    <button class="save-btn" id="save-api-url">Save</button>
+    <div id="save-msg">✓ Saved</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
