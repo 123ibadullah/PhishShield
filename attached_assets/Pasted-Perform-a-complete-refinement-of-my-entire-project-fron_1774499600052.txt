@@ -1,0 +1,103 @@
+Perform a complete refinement of my entire project (frontend + backend + UI + logic + structure).
+
+Goal:
+Keep all existing features and system strength the SAME or better, but transform the project so it looks like it was built by a highly skilled human student — not AI-generated, not robotic, not over-polished.
+
+-------------------------------------
+
+1. Preserve Core Strength:
+- DO NOT remove any major features
+- Keep:
+  - ML-based phishing detection
+  - Multi-layer scoring system
+  - URL analysis
+  - Explainable AI
+  - Dashboard and metrics
+- If possible, improve clarity and usability without removing depth
+
+-------------------------------------
+
+2. Code Humanization (Important):
+- Rewrite parts of code to look natural and student-written
+- Avoid overly perfect or auto-generated patterns
+- Use realistic variable names and structure
+- Add simple human-style comments (not excessive)
+- Keep code clean but not "enterprise-heavy"
+
+-------------------------------------
+
+3. Backend Refinement:
+- Ensure all APIs work properly (/api/analyze, /api/history, /api/metrics)
+- Improve readability of logic without reducing capability
+- Keep advanced logic but make it understandable
+- Add simple error handling and validations
+
+-------------------------------------
+
+4. Frontend Improvement:
+- Keep UI strong but slightly more natural (not overly polished)
+- Improve:
+  - Layout clarity
+  - Result visibility (score + explanation)
+  - User flow (input → scan → result)
+- Add:
+  - Loading state ("Scanning...")
+  - Clear alerts for high risk
+- Avoid overly fancy or unrealistic UI design
+
+-------------------------------------
+
+5. UX (User Experience):
+- Make interaction smooth and intuitive
+- Ensure user understands results easily
+- Improve readability and spacing
+
+-------------------------------------
+
+6. Design Balance:
+- Keep it modern but realistic
+- Use simple color system:
+  - Green (safe)
+  - Yellow (medium)
+  - Red (high)
+- Avoid "perfect startup-level design"
+- Keep it like a strong student project
+
+-------------------------------------
+
+7. Performance Optimization:
+- Remove unnecessary complexity if present
+- Keep app fast and responsive
+
+-------------------------------------
+
+8. Security Basics:
+- Validate inputs
+- Prevent crashes on invalid data
+
+-------------------------------------
+
+9. Structure:
+- Keep project organized but not overly complex
+- Make it easy to understand quickly
+
+-------------------------------------
+
+10. Bug Fixing:
+- Identify and fix all bugs
+- Ensure smooth execution
+
+-------------------------------------
+
+11. Final Evaluation:
+- Does the project look like a real student-built system? (YES/NO)
+- Is it stronger than typical AI-generated projects? (YES/NO)
+- Is it demo-ready? (YES/NO)
+
+-------------------------------------
+
+Important:
+- Do NOT downgrade the project
+- Do NOT remove complexity completely
+- Just make it natural, clean, and impressive
+- Balance: Strong + Human + Realistic
