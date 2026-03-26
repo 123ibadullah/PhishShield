@@ -233,54 +233,13 @@
     <ul class="reasons-list" id="reasons-list"></ul>
 
     <div class="actions">
-      <button class="btn btn-back" onclick="goBack()">← Take Me to Safety</button>
-      <button class="btn btn-proceed" onclick="proceedAnyway()">I understand the risk, proceed anyway</button>
+      <button class="btn btn-back" id="btn-back">← Take Me to Safety</button>
+      <button class="btn btn-proceed" id="btn-proceed">I understand the risk, proceed anyway</button>
     </div>
 
     <div class="footer">PhishShield Guardian · Detection runs entirely on-device · No data is sent anywhere</div>
   </div>
 
-  <script>
-    const params = new URLSearchParams(location.search);
-    const url        = params.get("url")   || "";
-    const score      = parseInt(params.get("score") || "0", 10);
-    const reasons    = JSON.parse(params.get("reasons") || "[]");
-    const india      = params.get("india") === "1";
-    const dest       = params.get("dest")  || "";
-
-    document.getElementById("score-circle").textContent = score;
-    document.getElementById("score-label").textContent  = `Risk Score: ${score}/100`;
-    document.getElementById("url-text").textContent     = url;
-
-    if (india) document.getElementById("india-alert").style.display = "block";
-
-    const list = document.getElementById("reasons-list");
-    if (reasons.length) {
-      reasons.forEach(r => {
-        const li = document.createElement("li");
-        li.className = "reason-item";
-        li.textContent = r;
-        list.appendChild(li);
-      });
-    } else {
-      const li = document.createElement("li");
-      li.className = "reason-item";
-      li.textContent = "This site matched multiple phishing indicators.";
-      list.appendChild(li);
-    }
-
-    function goBack() {
-      if (history.length > 1) history.back();
-      else window.close();
-    }
-
-    function proceedAnyway() {
-      if (!dest) return;
-      // Tell background to allow this URL once (prevents redirect loop)
-      chrome.runtime.sendMessage({ type: "ALLOW_URL", url: dest }, () => {
-        location.href = dest;
-      });
-    }
-  </script>
+  <script src="warning.js"></script>
 </body>
 </html>
