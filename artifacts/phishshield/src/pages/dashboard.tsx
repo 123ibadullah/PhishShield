@@ -106,6 +106,45 @@ function formatDate(iso: string) {
 
 type Tab = 'analyze' | 'dashboard';
 
+// Donut chart for the scan breakdown. Colors use CSS variables from :root
+// so they stay consistent with the rest of the theme.
+const PIE_COLORS = {
+  Phishing:  'hsl(var(--destructive))',
+  Suspicious: 'hsl(var(--warning))',
+  Safe:       'hsl(var(--safe))',
+} as const;
+
+type MetricsCounts = {
+  phishingDetected: number;
+  suspiciousDetected: number;
+  safeDetected: number;
+} | undefined;
+
+function DonutChart({ metrics }: { metrics: MetricsCounts }) {
+  const pieData: { name: keyof typeof PIE_COLORS; value: number }[] = [
+    { name: 'Phishing',   value: metrics?.phishingDetected  ?? 0 },
+    { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0 },
+    { name: 'Safe',       value: metrics?.safeDetected       ?? 0 },
+  ].filter(d => d.value > 0) as { name: keyof typeof PIE_COLORS; value: number }[];
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
+          {pieData.map(entry => (
+            <Cell key={entry.name} fill={PIE_COLORS[entry.name]} />
+          ))}
+        </Pie>
+        <Tooltip
+          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+          itemStyle={{ color: 'hsl(var(--foreground))' }}
+        />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
 export default function Dashboard() {
   const [emailText, setEmailText] = useState('');
   const [showDemos, setShowDemos] = useState(false);
@@ -130,6 +169,9 @@ export default function Dashboard() {
   }, []);
 
   const history = serverHistory.length > 0 ? serverHistory : localHistory;
+
+  // Pre-compute verdict colors so we don't need an IIFE inside JSX
+  const verdictColors = result ? classificationColor(result.classification) : null;
 
   const handleScan = () => {
     if (!emailText.trim()) return;
@@ -368,34 +410,31 @@ export default function Dashboard() {
                     className="space-y-6"
                   >
                     {/* 1. Verdict card — the first thing users should see */}
-                    {(function VerdictCard() {
-                      const c = classificationColor(result.classification);
-                      const langCode = LANG_CODES[result.detectedLanguage] ?? 'MX';
-                      const langLabel = LANG_LABELS[result.detectedLanguage] ?? result.detectedLanguage;
-                      return (
-                        <div className={cn("rounded-xl border shadow-sm overflow-hidden relative", c.bg, c.border)}>
-                          <div className={cn("absolute left-0 top-0 bottom-0 w-1", c.bar)} />
-                          <div className="p-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 pl-8">
-                            <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-                              <h2 className={cn("text-3xl font-bold uppercase tracking-tight", c.text)}>
-                                {result.classification}
-                              </h2>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Confidence: {(result.confidence * 100).toFixed(0)}%
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
-                                <Languages className="w-3.5 h-3.5" />
-                                <span>
-                                  <span className="font-mono text-[10px] bg-secondary px-1 py-0.5 rounded mr-1">{langCode}</span>
-                                  {langLabel} detected
+                    {verdictColors && (
+                      <div className={cn("rounded-xl border shadow-sm overflow-hidden relative", verdictColors.bg, verdictColors.border)}>
+                        <div className={cn("absolute left-0 top-0 bottom-0 w-1", verdictColors.bar)} />
+                        <div className="p-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 pl-8">
+                          <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                            <h2 className={cn("text-3xl font-bold uppercase tracking-tight", verdictColors.text)}>
+                              {result.classification}
+                            </h2>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Confidence: {(result.confidence * 100).toFixed(0)}%
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                              <Languages className="w-3.5 h-3.5" />
+                              <span>
+                                <span className="font-mono text-[10px] bg-secondary px-1 py-0.5 rounded mr-1">
+                                  {LANG_CODES[result.detectedLanguage] ?? 'MX'}
                                 </span>
-                              </div>
+                                {LANG_LABELS[result.detectedLanguage] ?? result.detectedLanguage} detected
+                              </span>
                             </div>
-                            <ScoreGauge score={result.riskScore} classification={result.classification} />
                           </div>
+                          <ScoreGauge score={result.riskScore} classification={result.classification} />
                         </div>
-                      );
-                    })()}
+                      </div>
+                    )}
 
                     {/* 2. Score breakdown — four sub-scores that add up to the final risk score */}
                     <div className="space-y-3 pt-2 pb-4 border-b border-border/50">
@@ -702,39 +741,9 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div className="flex flex-col sm:flex-row items-center gap-6">
-                      {/* Donut chart — colors hardcoded to match the safe/warning/destructive theme */}
+                      {/* Donut chart — colors reference the CSS vars defined in :root */}
                       <div className="w-full sm:w-64 h-52 shrink-0">
-                        {(() => {
-                          const pieData = [
-                            { name: 'Phishing',  value: metrics?.phishingDetected  ?? 0, fill: 'hsl(0, 72%, 58%)' },
-                            { name: 'Suspicious', value: metrics?.suspiciousDetected ?? 0, fill: 'hsl(43, 96%, 56%)' },
-                            { name: 'Safe',       value: metrics?.safeDetected       ?? 0, fill: 'hsl(150, 60%, 45%)' },
-                          ].filter(d => d.value > 0);
-                          return (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={pieData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={55}
-                                  outerRadius={80}
-                                  paddingAngle={3}
-                                  dataKey="value"
-                                >
-                                  {pieData.map(entry => (
-                                    <Cell key={entry.name} fill={entry.fill} />
-                                  ))}
-                                </Pie>
-                                <Tooltip
-                                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                                  itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                />
-                                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          );
-                        })()}
+                        <DonutChart metrics={metrics} />
                       </div>
 
                       {/* Threat breakdown bars */}
