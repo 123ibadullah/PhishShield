@@ -293,4 +293,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ ok: true });
     return true;
   }
+
+  // Content script finished scanning page text & inputs
+  if (message.type === "CONTENT_ANALYSIS") {
+    const tabId  = sender.tab?.id;
+    const tabUrl = sender.tab?.url;
+    if (!tabId) { sendResponse(null); return true; }
+
+    const { contentScore = 0, contentReasons = [] } = message;
+
+    // Get the existing URL-based result (or create a neutral baseline)
+    let base = tabResults.get(tabId);
+    if (!base && tabUrl && !shouldSkip(tabUrl)) {
+      base = checkUrl(tabUrl);
+      if (base) tabResults.set(tabId, base);
+    }
+    if (!base) {
+      base = {
+        riskScore: 0, classification: "safe",
+        reasons: [], flags: [],
+        url: tabUrl, domain: extractDomain(tabUrl || ""),
+        isIndianBankingRelated: false,
+      };
+    }
+
+    // Combine URL score + content score (content capped at 50, total capped at 100)
+    const combined     = Math.min((base.riskScore || 0) + Math.min(contentScore, 50), 100);
+    const newClass     = combined >= 71 ? "phishing" : combined >= 31 ? "suspicious" : "safe";
+
+    const updated = {
+      ...base,
+      riskScore:       combined,
+      classification:  newClass,
+      reasons:         [...(base.reasons || []), ...contentReasons],
+      contentAnalyzed: true,
+    };
+
+    tabResults.set(tabId, updated);
+    updateBadge(tabId, updated);
+
+    // Return the merged result to the content script so it can show overlay/banner
+    sendResponse(updated);
+    return true;
+  }
 });

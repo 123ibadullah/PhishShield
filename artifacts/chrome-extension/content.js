@@ -326,4 +326,79 @@
   }
 
   requestResult(0);
+
+  // ─── Content-based phishing detection ───────────────────────────────────
+  // Runs after the page has rendered, scans visible text and input fields.
+  // Sends findings to background which merges them with the URL-based score.
+
+  const CONTENT_PATTERNS = [
+    { re: /\botp\b/i,                                                    score: 20, label: "This page is requesting an OTP (one-time password)" },
+    { re: /enter\s+your\s+(pin|password)/i,                              score: 20, label: "This page is asking for your PIN or password" },
+    { re: /kyc\s*(verification|update|required)/i,                       score: 20, label: "This page claims to require KYC verification" },
+    { re: /\bcvv\b/i,                                                    score: 20, label: "This page is requesting your card CVV" },
+    { re: /\baadhaar\b/i,                                                score: 15, label: "This page is requesting Aadhaar details" },
+    { re: /account.{0,20}(suspend|block|restrict)/i,                     score: 20, label: "This page claims your account is suspended or restricted" },
+    { re: /urgent.{0,30}(verify|update|confirm|login)/i,                 score: 15, label: "Urgency language combined with a login or verification request" },
+    { re: /(verify|confirm|update)\s+your\s+(account|details|identity)/i, score: 15, label: "Suspicious account verification request detected" },
+    { re: /(act now|immediately|within \d+ hours)/i,                     score: 10, label: "High-pressure urgency language detected" },
+    { re: /bank\s+(account|details|number)/i,                            score: 10, label: "This page is asking for bank account details" },
+    { re: /won.{0,30}(prize|reward|lottery|cash)/i,                      score: 15, label: "Prize or reward scam language detected" },
+    { re: /free\s+(gift|offer|reward|iphone|cash)/i,                     score: 10, label: "Fake free offer language detected" },
+    { re: /\b(pan\s*card|pan\s*number)\b/i,                              score: 15, label: "This page is requesting PAN card details" },
+  ];
+
+  const SENSITIVE_INPUT_RE = /otp|pin|password|cvv|card.?number|aadhaar|pan/i;
+
+  function analyzePageContent() {
+    if (!document.body) return;
+    // Never scan our own warning page
+    if (location.href.includes("warning.html")) return;
+    if (!location.href.startsWith("http")) return;
+
+    let contentScore    = 0;
+    const contentReasons = [];
+    const seen           = new Set();
+
+    // 1. Scan visible text (first 15,000 chars for speed)
+    const text = document.body.innerText.slice(0, 15000);
+
+    for (const { re, score, label } of CONTENT_PATTERNS) {
+      if (contentScore >= 50) break;
+      if (re.test(text) && !seen.has(label)) {
+        seen.add(label);
+        contentScore += score;
+        contentReasons.push(label);
+      }
+    }
+
+    // 2. Check for sensitive input fields (password box, OTP field, etc.)
+    let hasSensitiveInputs = false;
+    for (const input of document.querySelectorAll("input")) {
+      const attrs = [input.type, input.name, input.id, input.placeholder].join(" ");
+      if (input.type === "password" || SENSITIVE_INPUT_RE.test(attrs)) {
+        hasSensitiveInputs = true;
+        break;
+      }
+    }
+
+    if (hasSensitiveInputs) {
+      contentScore += 25;
+      contentReasons.push("This page contains sensitive input fields (password, OTP, or PIN)");
+    }
+
+    contentScore = Math.min(contentScore, 50);
+    if (contentScore === 0) return; // nothing found — don't bother background
+
+    chrome.runtime.sendMessage(
+      { type: "CONTENT_ANALYSIS", contentScore, contentReasons, hasSensitiveInputs },
+      (updatedResult) => {
+        if (chrome.runtime.lastError || !updatedResult) return;
+        // Re-run handleResult with the combined URL+content score
+        handleResult(updatedResult);
+      }
+    );
+  }
+
+  // Wait 1.5 s for the page to render before scanning
+  setTimeout(analyzePageContent, 1500);
 })();
