@@ -11,7 +11,7 @@ Production-quality phishing email detection SaaS for Indian users. Built for nat
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
+- **Database**: SQLite (libSQL) + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
@@ -24,7 +24,7 @@ Production-quality phishing email detection SaaS for Indian users. Built for nat
 - **ML Feature Contributions UI** — horizontal bar chart showing which vocabulary terms drove the ML score (red=phishing, green=safe), with TF-IDF × LR weight magnitude
 - **Email Header Analysis panel** — shows sender, display name, Reply-To with mismatch badge, spoofing risk level, detailed issue descriptions
 - **4-component score breakdown** — ML Analysis (25%), Pattern Matching (38%), Link Risk (22%), Header Risk (15%)
-- **localStorage history persistence** — scan history survives page refresh; up to 20 entries
+- **SQLite history persistence** — scan history survives page refresh and is stored permanently on the backend in SQLite; frontend also caches up to 20 entries in localStorage
 - India-specific intelligence: SBI, HDFC, ICICI, UPI (Paytm/PhonePe/GPay) patterns + Hindi/Telugu detection
 - Real-time risk scoring (0-100) with Safe/Suspicious/Phishing classification thresholds (0-30/31-70/71-100)
 - Explainable AI with human-readable reasons, severity levels, suspicious word highlighting
@@ -55,7 +55,7 @@ artifacts-monorepo/
 
 - `GET /api/healthz` — Health check
 - `POST /api/analyze` — Analyze email; returns riskScore, classification, detectedLanguage, reasons, urlAnalyses, suspiciousSpans, featureImportance[], headerAnalysis
-- `GET /api/history` — Last 10 scans this session (in-memory)
+- `GET /api/history` — Last 50 scans this session (SQLite DB)
 - `DELETE /api/history` — Clear scan history
 - `GET /api/metrics` — Model metrics (accuracy/precision/recall/F1/FPR) + session counts
 

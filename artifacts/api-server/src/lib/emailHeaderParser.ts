@@ -19,29 +19,65 @@ export type HeaderAnalysis = {
 };
 
 const SUSPICIOUS_SENDER_TLDS = [
-  ".xyz", ".tk", ".ml", ".ga", ".cf", ".gq", ".pw",
-  ".top", ".club", ".online", ".site", ".icu",
+  ".xyz",
+  ".tk",
+  ".ml",
+  ".ga",
+  ".cf",
+  ".gq",
+  ".pw",
+  ".top",
+  ".club",
+  ".online",
+  ".site",
+  ".icu",
 ];
 
 const FREEMAIL_DOMAINS = [
-  "gmail.com", "yahoo.com", "yahoo.in", "hotmail.com", "outlook.com",
-  "rediffmail.com", "yandex.com", "protonmail.com",
+  "gmail.com",
+  "yahoo.com",
+  "yahoo.in",
+  "hotmail.com",
+  "outlook.com",
+  "rediffmail.com",
+  "yandex.com",
+  "protonmail.com",
 ];
 
 const CORPORATE_CLAIMANTS = [
-  "sbi", "hdfc", "icici", "axis", "paytm", "phonepe", "gpay",
-  "irctc", "uidai", "incometax", "epfo", "amazon", "flipkart",
+  "sbi",
+  "hdfc",
+  "icici",
+  "axis",
+  "paytm",
+  "phonepe",
+  "gpay",
+  "irctc",
+  "uidai",
+  "incometax",
+  "epfo",
+  "amazon",
+  "flipkart",
 ];
 
-function extractEmail(raw: string): { email: string; displayName: string; domain: string } | null {
+function extractEmail(
+  raw: string,
+): { email: string; displayName: string; domain: string } | null {
   // Match "Display Name <email@domain.com>" or bare "email@domain.com"
   const angleMatch = raw.match(/<([^>]+@[^>]+)>/);
-  const email = angleMatch ? angleMatch[1].trim() : raw.trim().split(/\s+/).find(s => s.includes("@")) ?? "";
+  const email = angleMatch
+    ? angleMatch[1].trim()
+    : (raw
+        .trim()
+        .split(/\s+/)
+        .find((s) => s.includes("@")) ?? "");
   if (!email.includes("@")) return null;
 
   const domain = email.split("@")[1]?.toLowerCase() ?? "";
-  const displayMatch = raw.match(/^([^<]+)</) ;
-  const displayName = displayMatch ? displayMatch[1].trim().replace(/^["']|["']$/g, "") : "";
+  const displayMatch = raw.match(/^([^<]+)</);
+  const displayName = displayMatch
+    ? displayMatch[1].trim().replace(/^["']|["']$/g, "")
+    : "";
 
   return { email: email.toLowerCase(), displayName, domain };
 }
@@ -50,7 +86,8 @@ function parseHeaders(text: string): Record<string, string> {
   const headers: Record<string, string> = {};
   // Headers are everything before the first blank line
   const blankLine = text.search(/\r?\n\r?\n/);
-  const headerSection = blankLine !== -1 ? text.slice(0, blankLine) : text.slice(0, 1000);
+  const headerSection =
+    blankLine !== -1 ? text.slice(0, blankLine) : text.slice(0, 1000);
 
   // Unfold headers (continuation lines start with whitespace)
   const unfolded = headerSection.replace(/\r?\n[ \t]+/g, " ");
@@ -68,7 +105,7 @@ function parseHeaders(text: string): Record<string, string> {
 }
 
 function isSuspiciousDomain(domain: string): boolean {
-  return SUSPICIOUS_SENDER_TLDS.some(tld => domain.endsWith(tld));
+  return SUSPICIOUS_SENDER_TLDS.some((tld) => domain.endsWith(tld));
 }
 
 function isFreeMail(domain: string): boolean {
@@ -86,7 +123,16 @@ function claimsKnownBrand(displayName: string, domain: string): string | null {
 function hasHeaderPatterns(text: string): boolean {
   // Look for at least two of the classic header fields within the first 500 chars
   const sample = text.slice(0, 800);
-  const headerFields = ["From:", "To:", "Subject:", "Date:", "Received:", "MIME-Version:", "Return-Path:", "Reply-To:"];
+  const headerFields = [
+    "From:",
+    "To:",
+    "Subject:",
+    "Date:",
+    "Received:",
+    "MIME-Version:",
+    "Return-Path:",
+    "Reply-To:",
+  ];
   let found = 0;
   for (const f of headerFields) {
     if (new RegExp(`^${f}`, "im").test(sample)) found++;
@@ -125,16 +171,24 @@ export function analyzeEmailHeaders(text: string): HeaderAnalysis {
   // ── From/Reply-To domain mismatch ────────────────────────────────────────
   const fromDomain = fromParsed?.domain ?? "";
   const replyToDomain = replyToParsed?.domain ?? "";
-  const mismatch = !!(replyToDomain && fromDomain && fromDomain !== replyToDomain);
+  const mismatch = !!(
+    replyToDomain &&
+    fromDomain &&
+    fromDomain !== replyToDomain
+  );
 
   if (mismatch) {
-    issues.push(`Reply-To domain (${replyToDomain}) differs from sender domain (${fromDomain}) — replies go to a different address than the sender`);
+    issues.push(
+      `Reply-To domain (${replyToDomain}) differs from sender domain (${fromDomain}) — replies go to a different address than the sender`,
+    );
     score += 35;
   }
 
   // ── Suspicious TLD in sender domain ──────────────────────────────────────
   if (fromDomain && isSuspiciousDomain(fromDomain)) {
-    issues.push(`Sender domain uses a high-risk TLD (${fromDomain}) — commonly used for disposable phishing addresses`);
+    issues.push(
+      `Sender domain uses a high-risk TLD (${fromDomain}) — commonly used for disposable phishing addresses`,
+    );
     score += 30;
   }
 
@@ -142,7 +196,9 @@ export function analyzeEmailHeaders(text: string): HeaderAnalysis {
   if (fromParsed && isFreeMail(fromDomain)) {
     const brand = claimsKnownBrand(fromParsed.displayName, fromDomain);
     if (brand) {
-      issues.push(`Display name suggests "${brand.toUpperCase()}" but email is sent from a free personal account (${fromDomain}) — not an official domain`);
+      issues.push(
+        `Display name suggests "${brand.toUpperCase()}" but email is sent from a free personal account (${fromDomain}) — not an official domain`,
+      );
       score += 40;
     }
   }
@@ -151,9 +207,13 @@ export function analyzeEmailHeaders(text: string): HeaderAnalysis {
   if (fromParsed?.displayName) {
     const brand = claimsKnownBrand(fromParsed.displayName, "");
     if (brand && fromDomain && !fromDomain.includes(brand)) {
-      const alreadyReported = issues.some(i => i.includes(brand.toUpperCase()));
+      const alreadyReported = issues.some((i) =>
+        i.includes(brand.toUpperCase()),
+      );
       if (!alreadyReported) {
-        issues.push(`The name "${fromParsed.displayName}" claims to be from ${brand.toUpperCase()} but the actual sending address (${fromDomain}) is unrelated`);
+        issues.push(
+          `The name "${fromParsed.displayName}" claims to be from ${brand.toUpperCase()} but the actual sending address (${fromDomain}) is unrelated`,
+        );
         score += 35;
       }
     }
@@ -162,28 +222,40 @@ export function analyzeEmailHeaders(text: string): HeaderAnalysis {
   // ── Return-Path domain different from From ────────────────────────────────
   const returnDomain = returnPathParsed?.domain ?? "";
   if (returnDomain && fromDomain && returnDomain !== fromDomain && !mismatch) {
-    issues.push(`Bounce path (${returnDomain}) differs from sender (${fromDomain}) — a sign of email spoofing infrastructure`);
+    issues.push(
+      `Bounce path (${returnDomain}) differs from sender (${fromDomain}) — a sign of email spoofing infrastructure`,
+    );
     score += 20;
   }
 
   // ── X-Spam headers flagged by mail server ────────────────────────────────
   if (xSpamStatus.toLowerCase().startsWith("yes")) {
-    issues.push("This email was already flagged as spam by the receiving mail server");
+    issues.push(
+      "This email was already flagged as spam by the receiving mail server",
+    );
     score += 25;
   }
   if (xSpamScore) {
     const numScore = parseFloat(xSpamScore);
     if (!isNaN(numScore) && numScore > 5) {
-      issues.push(`Mail server spam score is ${numScore.toFixed(1)} — above the typical safe threshold of 5.0`);
+      issues.push(
+        `Mail server spam score is ${numScore.toFixed(1)} — above the typical safe threshold of 5.0`,
+      );
       score += 15;
     }
   }
 
   // ── Suspicious subject patterns ───────────────────────────────────────────
-  const urgentSubject = /urgent|immediate|action required|account|suspended|verify|kyc|otp/i.test(subjectRaw);
-  const allCapsSubject = subjectRaw.length > 5 && subjectRaw === subjectRaw.toUpperCase();
+  const urgentSubject =
+    /urgent|immediate|action required|account|suspended|verify|kyc|otp/i.test(
+      subjectRaw,
+    );
+  const allCapsSubject =
+    subjectRaw.length > 5 && subjectRaw === subjectRaw.toUpperCase();
   if (urgentSubject && allCapsSubject) {
-    issues.push("Subject line is written in all capitals with urgency keywords — a common phishing tactic");
+    issues.push(
+      "Subject line is written in all capitals with urgency keywords — a common phishing tactic",
+    );
     score += 15;
   }
 

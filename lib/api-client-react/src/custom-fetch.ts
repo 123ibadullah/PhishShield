@@ -297,6 +297,11 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
+  // Set default API key for development/demo ease-of-use (PhishShield logic integration)
+  if (!headers.has("authorization")) {
+    headers.set("authorization", "Bearer dev-sandbox-key");
+  }
+
   const requestInfo = { method, url: resolveUrl(input) };
 
   const response = await fetch(input, { ...init, method, headers });

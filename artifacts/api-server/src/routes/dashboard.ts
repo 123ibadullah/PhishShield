@@ -1,31 +1,45 @@
 import { Router, type IRouter } from "express";
 import { GetModelMetricsResponse } from "@workspace/api-zod";
-import { getHistory, clearHistory, getSessionCounts } from "../lib/historyStore.js";
+import {
+  getHistory,
+  clearHistory,
+  getSessionCounts,
+} from "../lib/historyStore.js";
 
 const router: IRouter = Router();
 
-router.get("/history", (_req, res) => {
+router.get("/history", async (_req, res) => {
   try {
-    res.json(getHistory());
+    res.json(await getHistory());
   } catch (err) {
     console.error("Error fetching history:", err);
-    res.status(500).json({ error: "server_error", message: "Could not retrieve scan history." });
+    res
+      .status(500)
+      .json({
+        error: "server_error",
+        message: "Could not retrieve scan history.",
+      });
   }
 });
 
-router.delete("/history", (_req, res) => {
+router.delete("/history", async (_req, res) => {
   try {
-    clearHistory();
+    await clearHistory();
     res.json({ status: "ok" });
   } catch (err) {
     console.error("Error clearing history:", err);
-    res.status(500).json({ error: "server_error", message: "Could not clear scan history." });
+    res
+      .status(500)
+      .json({
+        error: "server_error",
+        message: "Could not clear scan history.",
+      });
   }
 });
 
-router.get("/metrics", (_req, res) => {
+router.get("/metrics", async (_req, res) => {
   try {
-    const counts = getSessionCounts();
+    const counts = await getSessionCounts();
 
     const metrics = GetModelMetricsResponse.parse({
       accuracy: 0.947,
@@ -42,7 +56,9 @@ router.get("/metrics", (_req, res) => {
     res.json(metrics);
   } catch (err) {
     console.error("Error fetching metrics:", err);
-    res.status(500).json({ error: "server_error", message: "Could not retrieve metrics." });
+    res
+      .status(500)
+      .json({ error: "server_error", message: "Could not retrieve metrics." });
   }
 });
 

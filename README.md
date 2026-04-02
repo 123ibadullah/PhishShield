@@ -19,7 +19,7 @@ Most phishing detection tools are trained on English-only Western email datasets
 - Highlights suspicious words and links directly in the email text
 - Detects phishing in English, Hindi (Devanagari script), and Telugu
 - Flags suspicious URLs — including lookalike domains like `sbi-secure-update.xyz`
-- Shows a session dashboard with scan history, threat breakdown, and model accuracy metrics
+- Shows a session dashboard with scan history, threat breakdown, and model accuracy metrics (persisted via SQLite)
 - Works entirely offline — no email data is sent anywhere
 
 ---
@@ -114,7 +114,7 @@ User pastes email
        |
        +-- Final score, classification, confidence
        |
-       +-- addToHistory()        (saved in-memory for session dashboard)
+       +-- addToHistory()        (saved to SQLite database for session dashboard)
        |
        v
   JSON response → React frontend
@@ -137,6 +137,8 @@ User pastes email
 | Backend | Node.js, Express 5 |
 | Validation | Zod (shared between frontend and backend) |
 | API layer | OpenAPI spec + Orval codegen (typed React Query hooks) |
+| Database | SQLite (libSQL) + Drizzle ORM |
+| Security | Helmet, Rate Limiter, API Key Auth |
 | Runtime | TypeScript throughout (tsx for the backend dev server) |
 | Monorepo | pnpm workspaces |
 
@@ -151,7 +153,7 @@ workspace/
 │   │   └── src/
 │   │       ├── lib/
 │   │       │   ├── phishingDetector.ts   # Core detection engine
-│   │       │   └── historyStore.ts       # In-memory session history
+│   │       │   └── historyStore.ts       # SQLite database integration
 │   │       └── routes/
 │   │           ├── phishing.ts           # POST /api/analyze
 │   │           └── dashboard.ts          # GET /api/history, /api/metrics
@@ -169,8 +171,10 @@ workspace/
     │   └── openapi.yaml                  # API contract
     ├── api-client-react/
     │   └── src/generated/api.ts          # Auto-generated React Query hooks
-    └── api-zod/
-        └── src/generated/api.schemas.ts  # Auto-generated Zod schemas
+    ├── api-zod/
+    │   └── src/generated/api.schemas.ts  # Auto-generated Zod schemas
+    └── db/
+        └── src/schema/                   # Drizzle ORM SQLite schemas
 ```
 
 ---
@@ -234,11 +238,9 @@ The session counts (total scanned, phishing detected, etc.) are live — they up
 
 **This is a prototype, not a production spam filter.** A few honest caveats:
 
-- The scan history is in-memory only. Restarting the server clears everything.
 - The model metrics are from the training dataset, not a live-evaluated deployment. A proper deployment would run evaluation on a held-out test set periodically.
 - The Hindi/Telugu detection is keyword-based, not a trained NLP model. It works for known patterns but will miss novel phrasing.
 - Very short emails with only one or two signals may score lower than expected, since the scoring is calibrated for more complete email samples.
-- The system does not inspect email headers, reply-to addresses, or sender domains — only the body text.
 
 ---
 
@@ -258,7 +260,4 @@ Most phishing detection tools stop at "spam or not spam". This one:
 ## Future improvements
 
 - Train a proper multilingual NLP model on a larger Hindi and Telugu dataset
-- Add header analysis (SPF/DKIM record checking, reply-to mismatches)
-- Browser extension that scans emails in Gmail / Outlook natively
 - Feedback loop — let users mark results as correct or incorrect to improve accuracy over time
-- Persistent storage with a real database for cross-session analytics

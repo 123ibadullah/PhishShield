@@ -1,0 +1,214 @@
+{
+  "totalTests": 23,
+  "passed": 23,
+  "failed": 0,
+  "results": [
+    {
+      "test": "AMAZON OTP (REAL USER EMAIL)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "CURSOR SIGN-IN (REAL USER EMAIL)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 11,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "OPENAI CHATGPT SUBSCRIPTION (REAL USER EMAIL)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 5,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "OPENAI WITH PHISHSHIELD ADVICE APPENDED (SELF-CONTAMINATION TEST)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "ZOMATO PROMO (REAL USER EMAIL)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "GOOGLE SECURITY ALERT (REAL)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "LEGIT PASSWORD RESET (GOOGLE)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "SPOTIFY SUBSCRIPTION RECEIPT",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 1,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "FAKE AMAZON (LOOKALIKE DOMAIN)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing",
+      "reasons": "url, url, urgency, header, india_specific"
+    },
+    {
+      "test": "OTP SCAM (SEND/REPLY REQUEST)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "OTP Scam",
+      "reasons": "urgency, social_engineering, india_specific"
+    },
+    {
+      "test": "REWARD SCAM",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing",
+      "reasons": "url, url, financial"
+    },
+    {
+      "test": "TRUSTED SENDER + MALICIOUS LINK",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 99,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing",
+      "reasons": "url, url"
+    },
+    {
+      "test": "URL AUTHORITY SPOOFING",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 81,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing",
+      "reasons": "url, url"
+    },
+    {
+      "test": "SHORTENER + URGENCY",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting",
+      "reasons": "url, urgency"
+    },
+    {
+      "test": "CONTEXT SMUGGLING (DISCLAIMERS HIDING ATTACK)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "OTP Scam",
+      "reasons": "social_engineering"
+    },
+    {
+      "test": "HINGLISH SCAM",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting",
+      "reasons": "url, urgency, india_specific"
+    },
+    {
+      "test": "TELUGU REWARD SCAM",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 75,
+      "passed": true,
+      "attackType": "Credential Harvesting",
+      "reasons": "url, financial, urgency"
+    },
+    {
+      "test": "ZERO-WIDTH SPACES IN OTP",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 84,
+      "passed": true,
+      "attackType": "OTP Scam",
+      "reasons": "urgency, social_engineering"
+    },
+    {
+      "test": "SPACED OUT PASSWORD REQUEST",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 80,
+      "passed": true,
+      "attackType": "Credential Harvesting",
+      "reasons": "urgency"
+    },
+    {
+      "test": "EMPTY EMAIL",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 0,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": ""
+    },
+    {
+      "test": "ONE WORD",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 1,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "MASSIVE TOS UPDATE",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational",
+      "reasons": "ml_score"
+    },
+    {
+      "test": "SUSPICIOUS ACCOUNT ALERT (NO LINKS, NO SENDER)",
+      "expected": "suspicious",
+      "actual": "suspicious",
+      "score": 34,
+      "passed": true,
+      "attackType": "Account Alert / Social Engineering",
+      "reasons": "ml_score"
+    }
+  ]
+}

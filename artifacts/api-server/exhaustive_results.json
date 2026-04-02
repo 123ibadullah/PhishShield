@@ -1,0 +1,471 @@
+{
+  "total": 58,
+  "pass": 58,
+  "fail": 0,
+  "results": [
+    {
+      "test": "A1: OpenAI Subscription",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "A2: Spotify Receipt",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 1,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "A3: Netflix Invoice",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 1,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "A4: Uber Ride Receipt",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 19,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "A5: Swiggy Order",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 11,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "A6: Razorpay Payment",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "A7: Zerodha Subscription",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "B1: Amazon OTP",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "B2: Cursor Sign-in",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 11,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "B3: Google 2FA",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "B4: Microsoft OTP",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "B5: GitHub 2FA",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "B6: LinkedIn OTP",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "C1: Google New Device",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "C2: Apple ID Login",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "C3: Facebook Login Alert",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "D1: Zomato Promo",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "D2: Flipkart Sale",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "D3: Medium Newsletter",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "D4: CRED Cashback Promo",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "D5: Google Pay Flex Promo",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "E1: Amazon Shipping",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 0,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "E2: Myntra Delivery",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 0,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "F1: Twitter/X Notification",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "F2: Instagram Like",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "F3: Discord Server Invite",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "G1: Fake Login Page",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 95,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "G2: Password Reset Scam",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 83,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "G3: OTP Harvest",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "OTP Scam"
+    },
+    {
+      "test": "G4: Send Password Request",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "H1: Gift Card Scam",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing"
+    },
+    {
+      "test": "H2: Lottery Scam",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "H3: Tax Refund Scam",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 91,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "I1: Fake HDFC",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing"
+    },
+    {
+      "test": "I2: Fake SBI",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "I3: Fake PayPal",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing"
+    },
+    {
+      "test": "J1: URL Authority Spoof",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 80,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing"
+    },
+    {
+      "test": "J2: Shortener + Urgency",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 77,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "J3: Homoglyph Domain",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 80,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing"
+    },
+    {
+      "test": "J4: Trusted Sender + Bad Link",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 93,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing"
+    },
+    {
+      "test": "K1: Fake KYC",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Lookalike Domain Phishing"
+    },
+    {
+      "test": "K2: UPI Fraud",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 98,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "K3: Aadhaar Scam",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "K4: PAN Verification",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "L1: Hindi Banking Scam",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "L2: Hinglish OTP Scam",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "OTP Scam"
+    },
+    {
+      "test": "L3: Telugu Reward",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 75,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "M1: Zero-Width OTP",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 84,
+      "passed": true,
+      "attackType": "OTP Scam"
+    },
+    {
+      "test": "M2: Spaced Password",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 80,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "M3: Disclaimers Hiding Attack",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "attackType": "OTP Scam"
+    },
+    {
+      "test": "M4: Self-Contamination Test",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "N1: Empty",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 0,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "N2: Single Word",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "N3: Just Numbers",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "N4: Just URL (safe)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "N5: Just URL (malicious)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 75,
+      "passed": true,
+      "attackType": "Credential Harvesting"
+    },
+    {
+      "test": "N6: Massive Email",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "attackType": "Safe / Informational"
+    },
+    {
+      "test": "O1: Vague Account Alert",
+      "expected": "suspicious",
+      "actual": "suspicious",
+      "score": 34,
+      "passed": true,
+      "attackType": "Account Alert / Social Engineering"
+    }
+  ]
+}

@@ -16,6 +16,8 @@ const URL_SHORTENERS = [
   "clk.sh", "is.gd", "v.gd",
 ];
 
+const BRAND_SHORTENERS = ["c.gle", "lnkd.in"];
+
 const LOOKALIKE_PATTERNS = [
   [/paypa[l1]|payp4l/i,                          "PayPal lookalike domain"],
   [/g00gle|g0ogle|gooogle/i,                     "Google lookalike domain"],
@@ -76,6 +78,10 @@ function checkUrl(url) {
     flags.push("URL shortener detected");
     reasons.push("A link shortener hides the real destination — the site you end up at could be anything.");
     score += 25;
+  } else if (BRAND_SHORTENERS.some(s => domain.includes(s))) {
+    flags.push("Official brand shortener detected");
+    reasons.push("This is an official shortener used by a trusted brand.");
+    score += 5;
   }
 
   // Lookalike domain

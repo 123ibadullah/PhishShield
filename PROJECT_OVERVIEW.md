@@ -68,7 +68,7 @@ Each URL in the email is analysed independently:
 - Matches UPI, OTP, KYC, and banking fraud patterns specific to Indian financial infrastructure
 - Detects impersonation of 20+ Indian banks and payment services
 - Matches Hindi phishing keywords in Devanagari script: "तुरंत", "बंद", "इनाम", "खाता", "सत्यापन", etc.
-- Detects Telugu script presence (Unicode range U+0C00–U+0C7F) for language identification; Telugu-specific keyword matching is not yet implemented and is planned as a future improvement
+- Matches Telugu phishing keywords: "వెంటనే", "బ్లాక్", "బహుమతి", "ఖాతా", "ధృవీకరణ", etc.
 
 ### 6. Email Header Spoofing Detection
 When a full RFC 5322 email (including headers) is pasted, the system analyses:
@@ -79,7 +79,7 @@ When a full RFC 5322 email (including headers) is pasted, the system analyses:
 - X-Spam server flags from the receiving mail server
 
 ### 7. Session Dashboard
-- Scan history — the server retains the last 10 scans in memory; the browser additionally persists up to 20 scans in local storage across page refreshes
+- Scan history — the server persists scans via SQLite and Drizzle ORM for a robust history log
 - Threat breakdown chart by classification
 - Live session counts (total scanned, phishing detected, suspicious, safe)
 - Model performance metrics (accuracy, precision, recall, F1)
@@ -97,6 +97,8 @@ When a full RFC 5322 email (including headers) is pasted, the system analyses:
 | Backend Dev Server | tsx |
 | Validation | Zod (shared between frontend and backend) |
 | API Layer | OpenAPI spec + Orval codegen (typed React Query hooks) |
+| Database | SQLite (libSQL) + Drizzle ORM |
+| Security | API Key Auth, Express Rate Limit, Helmet |
 | Monorepo | pnpm workspaces |
 
 ---
@@ -113,7 +115,7 @@ User pastes email text
        |
        +-- analyzeEmailHeaders()   Header score: From/Reply-To mismatch, freemail spoofing, X-Spam flags
        |
-       +-- computeRuleScore()      Rule score: keyword matching, brand detection, Hindi keyword patterns (Telugu: script detection only)
+       +-- computeRuleScore()      Rule score: keyword matching, brand detection, Hindi and Telugu keyword patterns
        |
        +-- extractUrls()
        |        |
@@ -131,7 +133,7 @@ User pastes email text
        |
        +-- confidence, warnings, safetyTips, suspiciousSpans, featureImportance
        |
-       +-- addToHistory()          Stored in-memory for session dashboard
+       +-- addToHistory()          Stored in SQLite database for session dashboard
        |
        v
   JSON response → React frontend
@@ -252,6 +254,10 @@ workspace/
 │   │       │   └── HighlightText.tsx     # Suspicious word highlighting with tooltips
 │   │       └── index.css                 # Design tokens and Tailwind theme
 │   │
+│   ├── chrome-extension/           # Chrome extension for fast Gmail verification
+│   │   ├── manifest.json
+│   │   └── content.js
+│   │
 │   └── mockup-sandbox/             # Component design preview server (development)
 │
 └── lib/
@@ -259,9 +265,10 @@ workspace/
     │   └── openapi.yaml                  # OpenAPI 3.1 contract (single source of truth)
     ├── api-client-react/
     │   └── src/generated/api.ts          # Auto-generated typed React Query hooks (Orval)
-    └── api-zod/
-        └── src/generated/api.schemas.ts  # Auto-generated Zod validation schemas (Orval)
-```
+    ├── api-zod/
+    │   └── src/generated/api.schemas.ts  # Auto-generated Zod validation schemas (Orval)
+    └── db/
+        └── src/schema/                   # Drizzle ORM SQLite schemas
 
 **Data flow:**
 - The OpenAPI spec (`lib/api-spec/openapi.yaml`) is the single source of truth for the API contract.
@@ -291,7 +298,7 @@ User pastes email
        |
        +-- Final score, classification, confidence
        |
-       +-- addToHistory()        (saved in-memory for session dashboard)
+       +-- addToHistory()        (saved to SQLite database for session dashboard)
        |
        v
   JSON response → React frontend
@@ -348,11 +355,8 @@ pnpm --filter @workspace/api-spec run codegen
 
 ## Future Improvements
 
-- **Browser extension** — scan emails directly inside Gmail and Outlook without copy-pasting
 - **Real-time email integration** — connect to a mail server via IMAP/SMTP to scan incoming mail automatically
 - **Advanced multilingual NLP** — train a proper language model on a large Hindi and Telugu phishing dataset, replacing the current keyword-based regional detection
-- **SPF/DKIM header checking** — validate email authentication records against DNS to detect domain spoofing at the protocol level
-- **Persistent database** — replace in-memory history with a real database for cross-session analytics and trend tracking
 - **User feedback loop** — allow users to mark results as correct or incorrect, feeding back into model retraining
 
 ---

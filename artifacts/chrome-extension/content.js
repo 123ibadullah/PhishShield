@@ -417,61 +417,53 @@
   // Runs after the page has rendered, scans visible text and input fields.
   // Sends findings to background which merges them with the URL-based score.
 
-  // Strong-signal keywords — any match counts as a serious phishing indicator
-  const STRONG_PATTERNS = [
-    { re: /\botp\b/i,                    score: 30, label: "This page is requesting an OTP (one-time password)" },
-    { re: /enter\s+your\s+(pin|password)/i, score: 30, label: "This page is asking for your PIN or password" },
-    { re: /\bcvv\b/i,                    score: 30, label: "This page is requesting your card CVV" },
-    { re: /kyc\s*(verification|update|required)/i, score: 25, label: "This page claims to require KYC verification" },
-    { re: /(verify|confirm|update)\s+your\s+(account|details|identity)/i, score: 25, label: "Suspicious account verification request detected" },
-    { re: /\baadhaar\b/i,                score: 25, label: "This page is requesting Aadhaar details" },
-    { re: /\b(pan\s*card|pan\s*number)\b/i, score: 25, label: "This page is requesting PAN card details" },
-    { re: /account.{0,20}(suspend|block|restrict)/i, score: 25, label: "This page claims your account is suspended or restricted" },
-  ];
-
-  // Supporting signals — add weight but not enough alone to force phishing
-  const SUPPORT_PATTERNS = [
-    { re: /urgent.{0,30}(verify|update|confirm|login)/i, score: 20, label: "Urgency language combined with a login or verification request" },
-    { re: /(act now|immediately|within \d+ hours)/i,     score: 20, label: "High-pressure urgency language detected" },
-    { re: /bank\s+(account|details|number)/i,            score: 15, label: "This page is asking for bank account details" },
-    { re: /won.{0,30}(prize|reward|lottery|cash)/i,      score: 15, label: "Prize or reward scam language detected" },
-    { re: /free\s+(gift|offer|reward|iphone|cash)/i,     score: 10, label: "Fake free offer language detected" },
-  ];
-
   const SENSITIVE_INPUT_RE = /otp|pin|password|cvv|card.?number|aadhaar|pan/i;
 
-  function analyzePageContent() {
+  async function analyzePageContent() {
     if (!document.body) return;
     if (location.href.includes("warning.html")) return;
     if (!location.href.startsWith("http")) return;
 
-    let contentScore     = 0;
-    const contentReasons = [];
-    const seen           = new Set();
-    let strongHits       = 0; // count of strong-signal matches
-
     const text = document.body.innerText.slice(0, 15000);
+    
+    let apiScore = 0;
+    let apiReasons = [];
+    let isApiPhishing = false;
 
-    // 1. Strong patterns
-    for (const { re, score, label } of STRONG_PATTERNS) {
-      if (re.test(text) && !seen.has(label)) {
-        seen.add(label);
-        contentScore += score;
-        contentReasons.push(label);
-        strongHits++;
+    try {
+      // 1. Send the page text to your powerful Machine Learning backend!
+      const res = await fetch("http://localhost:5000/api/analyze", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer dev-sandbox-key" 
+        },
+        body: JSON.stringify({ emailText: text })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        // The ML API returns a riskScore and an array of objects for reasons
+        apiScore = data.riskScore || 0;
+        
+        // Unpack the reason objects into plain text strings
+        if (data.reasons && Array.isArray(data.reasons)) {
+            apiReasons = data.reasons.map(r => r.description || r.category || "Suspicious content detected by AI");
+        }
+        
+        if (data.classification === "phishing") {
+            isApiPhishing = true;
+        }
       }
+    } catch (err) {
+      console.warn("PhishShield AI backend unreachable, falling back to local signals.", err);
     }
 
-    // 2. Supporting patterns
-    for (const { re, score, label } of SUPPORT_PATTERNS) {
-      if (re.test(text) && !seen.has(label)) {
-        seen.add(label);
-        contentScore += score;
-        contentReasons.push(label);
-      }
-    }
+    let contentScore = apiScore;
+    const contentReasons = [...apiReasons];
 
-    // 3. Sensitive input fields → +40
+    // Keep the fast local check for sensitive input fields
+
     let hasSensitiveInputs = false;
     for (const input of document.querySelectorAll("input")) {
       const attrs = [input.type, input.name, input.id, input.placeholder].join(" ");
@@ -486,8 +478,8 @@
       contentReasons.push("This page contains sensitive input fields (password, OTP, or PIN)");
     }
 
-    // forcePhishing = strong keywords present AND sensitive inputs found
-    const forcePhishing = strongHits > 0 && hasSensitiveInputs;
+    // forcePhishing = API classified as phishing OR sensitive inputs found on a suspicious page
+    const forcePhishing = isApiPhishing || (hasSensitiveInputs && contentScore > 30);
 
     contentScore = Math.min(contentScore, 60); // slightly higher cap to let serious pages reach 75+
     if (contentScore === 0) return;

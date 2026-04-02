@@ -48,6 +48,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [phishing]
+      summary: Submit user feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackRequest"
+      responses:
+        "200":
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /report:
+    post:
+      operationId: generateReport
+      tags: [phishing]
+      summary: Generate downloadable report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeResult"
+      responses:
+        "200":
+          description: Report content
+          content:
+            text/plain:
+              schema:
+                type: string
   /history:
     get:
       operationId: getScanHistory
@@ -99,6 +135,9 @@ components:
       properties:
         emailText:
           type: string
+        headers:
+          type: string
+          description: Optional raw email headers for spoofing analysis
       required:
         - emailText
     UrlAnalysis:
@@ -122,12 +161,22 @@ components:
         - riskScore
         - flags
         - isSuspicious
+    FeedbackRequest:
+      type: object
+      properties:
+        emailId:
+          type: string
+        isAccurate:
+          type: boolean
+      required:
+        - emailId
+        - isAccurate
     DetectionReason:
       type: object
       properties:
         category:
           type: string
-          enum: [urgency, financial, social_engineering, url, domain, india_specific, ml_score, language, header]
+          enum: [urgency, financial, social_engineering, url, domain, india_specific, ml_score, language, header, informational]
         description:
           type: string
         severity:
@@ -210,6 +259,8 @@ components:
     AnalyzeResult:
       type: object
       properties:
+        id:
+          type: string
         riskScore:
           type: number
         classification:
@@ -249,6 +300,13 @@ components:
         headerScore:
           type: number
           description: Risk score contribution from email header analysis (0-100)
+        attackType:
+          type: string
+          enum: ["Credential Harvesting", "Reward Scam", "Bank Impersonation", "OTP Scam", "Social Engineering", "Safe / Informational"]
+          description: "Categorization of the specific phishing strategy used"
+        scamStory:
+          type: string
+          description: "Human-friendly explanation of the risk and potential impact"
         featureImportance:
           type: array
           items:
@@ -257,6 +315,7 @@ components:
         headerAnalysis:
           $ref: "#/components/schemas/HeaderAnalysis"
       required:
+        - id
         - riskScore
         - classification
         - confidence
@@ -271,6 +330,8 @@ components:
         - urlScore
         - headerScore
         - featureImportance
+        - attackType
+        - scamStory
     ScanHistoryItem:
       type: object
       properties:

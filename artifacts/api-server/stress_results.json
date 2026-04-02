@@ -1,0 +1,118 @@
+{
+  "totalPass": 14,
+  "totalFail": 0,
+  "results": [
+    {
+      "testName": "ZERO-WIDTH SPACES IN KEYWORDS",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 84,
+      "passed": true,
+      "reasons": "urgency, social_engineering"
+    },
+    {
+      "testName": "WEIRD CASING & SPACING",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 80,
+      "passed": true,
+      "reasons": "urgency"
+    },
+    {
+      "testName": "URL AUTHORITY SPOOFING (USER@DOMAIN)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 81,
+      "passed": true,
+      "reasons": "url, url"
+    },
+    {
+      "testName": "HOMOGLYPH IN BODY (L0gIn)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 76,
+      "passed": true,
+      "reasons": "url, urgency"
+    },
+    {
+      "testName": "REDIRECTION / SHORTENER",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "reasons": "url, urgency"
+    },
+    {
+      "testName": "MALICIOUS PAYLOAD WRAPPED IN SAFE DISCLAIMERS",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "reasons": "social_engineering"
+    },
+    {
+      "testName": "TRUSTED DOMAIN + MALICIOUS LINK (COMPROMISED EMAIL)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 99,
+      "passed": true,
+      "reasons": "url, url"
+    },
+    {
+      "testName": "ZOMATO PROMO WITH EMOJIS (USER REPORTED)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "reasons": "ml_score"
+    },
+    {
+      "testName": "LEGIT PASSWORD RESET (REQUESTED BY USER)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 20,
+      "passed": true,
+      "reasons": "ml_score"
+    },
+    {
+      "testName": "EMPTY EMAIL",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 0,
+      "passed": true,
+      "reasons": ""
+    },
+    {
+      "testName": "ONE WORD EMAIL",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 1,
+      "passed": true,
+      "reasons": "ml_score"
+    },
+    {
+      "testName": "MASSIVE OVERWHELMING TEXT (TOS UPDATE)",
+      "expected": "safe",
+      "actual": "safe",
+      "score": 3,
+      "passed": true,
+      "reasons": "ml_score"
+    },
+    {
+      "testName": "HINDI + ENGLISH URGENCY (HINGLISH)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 100,
+      "passed": true,
+      "reasons": "url, urgency, india_specific"
+    },
+    {
+      "testName": "PURE REGIONAL SCAM (TELUGU)",
+      "expected": "phishing",
+      "actual": "phishing",
+      "score": 75,
+      "passed": true,
+      "reasons": "url, financial, urgency"
+    }
+  ]
+}

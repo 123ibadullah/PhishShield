@@ -1,0 +1,29 @@
+{
+  "timeZone": "Asia/Kolkata",
+  "dependencies": {
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/gmail.addons.execute",
+    "https://www.googleapis.com/auth/gmail.addons.current.message.readonly",
+    "https://www.googleapis.com/auth/script.external_request"
+  ],
+  "runtimeVersion": "V8",
+  "addOns": {
+    "common": {
+      "name": "PhishShield AI",
+      "logoUrl": "https://raw.githubusercontent.com/123ibadullah/PhishShield/main/artifacts/chrome-extension/icons/icon48.png",
+      "useLocaleFromApp": true,
+      "homepageTrigger": {
+        "runFunction": "buildAddOn",
+        "enabled": true
+      }
+    },
+    "gmail": {
+      "contextualTriggers": [{
+        "unconditional": {},
+        "onTriggerFunction": "buildAddOn"
+      }]
+    }
+  }
+}
